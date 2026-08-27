@@ -1,0 +1,290 @@
+<title>Alice, Bob, and Eve</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 64ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .readout .qber-bad { color: #ff7a4d !important; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .toggle-label { font-size: 0.88rem; }
+  .toggle-label small { display: block; font-size: 0.74rem; color: var(--ink-dim); margin-top: 2px; font-weight: 400; }
+  .switch { position: relative; width: 42px; height: 24px; flex: 0 0 auto; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track { position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: background 0.15s; }
+  .switch .thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 999px; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .switch input:checked + .track { background: var(--red); }
+  .switch input:checked + .track + .thumb { transform: translateX(18px); }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;9</div>
+    <h1>Alice, Bob, and Eve</h1>
+  </header>
+  <p class="dek">
+    Alice sends Bob a string of qubits, each in a randomly chosen basis carrying a random bit. Bob measures
+    each one in his own randomly chosen basis. Afterward, they only keep the bits where their bases happened
+    to match &mdash; and if Eve was listening in, that alone leaves a fingerprint they can measure.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>sent&nbsp;<b id="rd-sent">0</b></span>
+      <span>kept&nbsp;<b id="rd-kept">0</b></span>
+      <span>errors&nbsp;in&nbsp;kept&nbsp;<b id="rd-errors">0</b></span>
+      <span>QBER&nbsp;<b id="rd-qber">&mdash;</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="620" role="img" aria-label="BB84 quantum key distribution: Alice sends qubits in random bases to Bob, who measures in his own random basis, with an optional eavesdropper Eve intercepting in between."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Run the Protocol</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-send">Send 24 qubits</button>
+        <button class="ghost" id="btn-reset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Eavesdropper</h2>
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Eve intercepts every qubit
+          <small>Measures in a random basis, then resends what she got &mdash; the only thing she can do without a copying machine quantum mechanics forbids.</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="eve-toggle">
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> each column is one qubit: Alice's bit and basis at top, Eve's
+    intercepted guess in the middle when she's listening, Bob's basis and result at the bottom. Columns where
+    Alice and Bob's bases matched are kept (highlighted); the rest are simply discarded &mdash; publicly
+    announcing your basis choice, never your bit, leaks nothing useful. Without Eve, every kept bit matches
+    exactly. With Eve intercepting and resending, she gets the wrong basis half the time, and each time she
+    does, Bob's result becomes a coin flip even when his basis matched Alice's &mdash; producing a
+    predictable 25% error rate in the kept bits. That number, checked against a small public sample of the
+    key, is how Alice and Bob catch her without ever meeting in person.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var clockT = 0;
+
+  var qubits = []; // { aliceBit, aliceBasis, eveBasis, eveBit, bobBasis, bobBit, kept, agree }
+  var sent = 0, kept = 0, errors = 0;
+  var eveOn = false;
+
+  function randBit() { return Math.random() < 0.5 ? 0 : 1; }
+  function randBasis() { return Math.random() < 0.5 ? 'Z' : 'X'; }
+
+  function runOne() {
+    var aliceBit = randBit(), aliceBasis = randBasis();
+    var qBasis = aliceBasis, qBit = aliceBit;
+    var eveBasis = null, eveBit = null;
+    if (eveOn) {
+      eveBasis = randBasis();
+      eveBit = (eveBasis === aliceBasis) ? aliceBit : randBit();
+      qBasis = eveBasis; qBit = eveBit; // Eve resends what she measured
+    }
+    var bobBasis = randBasis();
+    var bobBit = (bobBasis === qBasis) ? qBit : randBit();
+    var basesMatch = aliceBasis === bobBasis;
+    var agree = aliceBit === bobBit;
+    return { aliceBit: aliceBit, aliceBasis: aliceBasis, eveBasis: eveBasis, eveBit: eveBit,
+             bobBasis: bobBasis, bobBit: bobBit, kept: basesMatch, agree: agree };
+  }
+
+  function sendBatch(n) {
+    qubits = [];
+    kept = 0; errors = 0; sent = n;
+    for (var i = 0; i < n; i++) {
+      var q = runOne();
+      qubits.push(q);
+      if (q.kept) { kept++; if (!q.agree) errors++; }
+    }
+    updateReadout();
+  }
+
+  function resetAll() {
+    qubits = []; sent = 0; kept = 0; errors = 0;
+    updateReadout();
+  }
+
+  function updateReadout() {
+    document.getElementById('rd-sent').textContent = sent.toString();
+    document.getElementById('rd-kept').textContent = kept.toString();
+    document.getElementById('rd-errors').textContent = errors.toString();
+    var qberEl = document.getElementById('rd-qber');
+    if (kept > 0) {
+      var qber = errors / kept;
+      qberEl.textContent = (qber * 100).toFixed(1) + '%';
+      qberEl.classList.toggle('qber-bad', qber > 0.05);
+    } else {
+      qberEl.textContent = '—';
+      qberEl.classList.remove('qber-bad');
+    }
+  }
+
+  // --- drawing ---
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 40; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function basisSymbol(b) { return b === 'Z' ? '+' : '×'; }
+
+  function drawChip(x, y, text, color, filled) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    if (filled) { ctx.fillStyle = color; ctx.fill(); ctx.fillStyle = '#0a0d16'; }
+    else { ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = color; }
+    ctx.font = '600 12px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y + 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  }
+
+  function drawColumns() {
+    var n = qubits.length;
+    if (n === 0) return;
+    var margin = 40;
+    var colW = Math.min(46, (W - margin * 2) / n);
+    var x0 = W / 2 - (colW * n) / 2 + colW / 2;
+    var rowAlice = 130, rowEve = 250, rowBob = 370, rowStatus = 460;
+
+    for (var i = 0; i < n; i++) {
+      var q = qubits[i];
+      var x = x0 + i * colW;
+      var goldC = 'rgba(232,193,92,0.95)', cyanC = 'rgba(94,200,216,0.95)', redC = 'rgba(255,122,77,0.95)', dimC = 'rgba(154,161,181,0.5)';
+
+      // connecting line
+      ctx.save();
+      ctx.strokeStyle = q.kept ? 'rgba(207,214,230,0.35)' : 'rgba(154,161,181,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, rowAlice + 14); ctx.lineTo(x, rowBob - 14); ctx.stroke();
+      ctx.restore();
+
+      drawChip(x, rowAlice, q.aliceBit + basisSymbol(q.aliceBasis), goldC, true);
+      if (eveOn && q.eveBasis) {
+        drawChip(x, rowEve, q.eveBit + basisSymbol(q.eveBasis), redC, false);
+      }
+      drawChip(x, rowBob, q.bobBit + basisSymbol(q.bobBasis), cyanC, q.kept);
+
+      ctx.save();
+      ctx.font = '600 10px "IBM Plex Sans", sans-serif';
+      ctx.textAlign = 'center';
+      if (q.kept) {
+        ctx.fillStyle = q.agree ? 'rgba(120,210,140,0.9)' : 'rgba(255,122,77,0.95)';
+        ctx.fillText(q.agree ? 'kept' : 'kept ✕', x, rowStatus);
+      } else {
+        ctx.fillStyle = 'rgba(154,161,181,0.5)';
+        ctx.fillText('discard', x, rowStatus);
+      }
+      ctx.restore();
+    }
+
+    // row labels
+    ctx.save();
+    ctx.font = '600 11px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(232,193,92,0.85)'; ctx.fillText('Alice', x0 - 24, rowAlice + 4);
+    if (eveOn) { ctx.fillStyle = 'rgba(255,122,77,0.85)'; ctx.fillText('Eve', x0 - 24, rowEve + 4); }
+    ctx.fillStyle = 'rgba(94,200,216,0.85)'; ctx.fillText('Bob', x0 - 24, rowBob + 4);
+    ctx.restore();
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawColumns();
+    requestAnimationFrame(frame);
+  }
+
+  document.getElementById('btn-send').addEventListener('click', function () { sendBatch(24); });
+  document.getElementById('btn-reset').addEventListener('click', resetAll);
+  document.getElementById('eve-toggle').addEventListener('change', function (e) {
+    eveOn = e.target.checked;
+  });
+
+  updateReadout();
+  requestAnimationFrame(frame);
+
+  window.__debugRunStats = function (n, eve) {
+    eveOn = eve;
+    var k = 0, e2 = 0;
+    for (var i = 0; i < n; i++) {
+      var q = runOne();
+      if (q.kept) { k++; if (!q.agree) e2++; }
+    }
+    return { n: n, kept: k, errors: e2, qber: k > 0 ? e2 / k : null, keptFraction: k / n };
+  };
+})();
+</script>
