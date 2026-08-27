@@ -1,0 +1,408 @@
+<title>Beat the Classical Limit</title>
+<style>
+  :root {
+    --bg: #f4f2ec;
+    --surface-2: #eae7dd;
+    --border: #d8d3c4;
+    --ink: #17140f;
+    --ink-dim: #5a5646;
+    --gold: #9c7a1f;
+    --gold-bright: #c9a227;
+    --cyan: #0f8b9e;
+    --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16;
+      --surface-2: #161c2b;
+      --border: #2a3244;
+      --ink: #ece7d8;
+      --ink-dim: #9aa1b5;
+      --gold: #c9a227;
+      --gold-bright: #e8c15c;
+      --cyan: #5ec8d8;
+      --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16;
+    --surface-2: #161c2b;
+    --border: #2a3244;
+    --ink: #ece7d8;
+    --ink-dim: #9aa1b5;
+    --gold: #c9a227;
+    --gold-bright: #e8c15c;
+    --cyan: #5ec8d8;
+    --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; justify-content: space-between; }
+  .readout .left { display: flex; gap: 18px; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .readout .qbit { color: #5ec8d8; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 16px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-label { font-size: 0.88rem; }
+  .toggle-label small { display: block; font-size: 0.74rem; color: var(--ink-dim); margin-top: 2px; font-weight: 400; }
+  .strategy-switch { display: flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .strategy-switch button { border: none; border-radius: 0; flex: 1; background: var(--bg); }
+  .strategy-switch button.active { background: var(--gold); color: #16130a; font-weight: 600; }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;3</div>
+    <h1>Beat the Classical Limit</h1>
+  </header>
+  <p class="dek">
+    Alice and Bob each get a random question (0 or 1) and must answer 0 or 1, with no way to communicate
+    once the round starts. They win if their answers agree &mdash; unless both questions were 1, in which case
+    they need to disagree. No strategy Alice and Bob agree on in advance, however clever, can win more than
+    75% of rounds &mdash; unless they're each holding one half of an entangled pair.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <div class="left">
+        <span>rounds&nbsp;<b id="rd-rounds">0</b></span>
+        <span>wins&nbsp;<b id="rd-wins">0</b></span>
+        <span>win&nbsp;rate&nbsp;<b id="rd-rate">&mdash;</b></span>
+      </div>
+      <div><span class="qbit" id="rd-mode">classical</span></div>
+    </div>
+    <canvas id="scene" width="1200" height="640" role="img" aria-label="CHSH game: Alice and Bob each receive a random question and answer it, entangled particles flying between a shared source and their stations."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Play Rounds</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-one">Play one</button>
+        <button id="btn-continuous">Continuous</button>
+        <button id="btn-fast">Play 1,000 (fast)</button>
+        <button class="ghost" id="btn-reset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Strategy</h2>
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Alice &amp; Bob's strategy
+          <small>Classical: best possible pre-agreed strategy, no entanglement. Quantum: they share an entangled pair.</small>
+        </div>
+      </div>
+      <div class="strategy-switch">
+        <button class="active" id="btn-mode-classical">Classical</button>
+        <button id="btn-mode-quantum">Quantum</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> every round, a referee flips two independent coins &mdash; one question
+    for Alice, one for Bob &mdash; and each must answer using only their own particle and their own question,
+    with no communication. Classically, the best possible pre-agreed strategy tops out at 75%, no matter how
+    clever: that is the content of Bell's theorem. With an entangled pair and the right measurement angles,
+    Alice and Bob's answers stay correlated in a way no shared classical script can reproduce, pushing the win
+    rate to cos&sup2;(22.5&deg;) &asymp; 85.4% &mdash; the Tsirelson bound. Watch the win-rate bar climb past the
+    dashed 75% line only in quantum mode.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var midY = H / 2;
+  var aliceX = 190, bobX = W - 190, sourceX = W / 2;
+
+  var mode = 'classical';
+  var rounds = 0, wins = 0;
+  var history = []; // recent round results, true/false
+  var clockT = 0;
+
+  // --- stars (ambient background, same treatment as the double-slit page) ---
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 55; i++) {
+      stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+    }
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // --- physics: sample one round's outcome ---
+  var ALICE_ANGLES = [0, 45];      // degrees
+  var BOB_ANGLES = [22.5, -22.5];  // degrees, the CHSH-optimal offset
+
+  function playLogicalRound() {
+    var x = Math.random() < 0.5 ? 0 : 1;
+    var y = Math.random() < 0.5 ? 0 : 1;
+    var a, b;
+    if (mode === 'classical') {
+      // The best possible pre-agreed local strategy: always answer 0.
+      // Any deterministic (or randomized-but-local) strategy tops out at
+      // 75% here — this one just makes that ceiling concrete and simple.
+      a = 0; b = 0;
+    } else {
+      var deltaDeg = ALICE_ANGLES[x] - BOB_ANGLES[y];
+      var deltaRad = deltaDeg * Math.PI / 180;
+      var pMatch = Math.cos(deltaRad) * Math.cos(deltaRad); // cos^2(Delta), the actual QM correlation
+      var match = Math.random() < pMatch;
+      a = Math.random() < 0.5 ? 0 : 1;
+      b = match ? a : 1 - a;
+    }
+    var win = (a ^ b) === (x & y);
+    rounds++;
+    if (win) wins++;
+    history.push(win);
+    if (history.length > 40) history.shift();
+    updateReadout();
+    return { x: x, y: y, a: a, b: b, win: win };
+  }
+
+  function updateReadout() {
+    document.getElementById('rd-rounds').textContent = rounds.toString();
+    document.getElementById('rd-wins').textContent = wins.toString();
+    document.getElementById('rd-rate').textContent = rounds > 0 ? (100 * wins / rounds).toFixed(1) + '%' : '—';
+    document.getElementById('rd-mode').textContent = mode;
+  }
+
+  function resetAll() {
+    rounds = 0; wins = 0; history = [];
+    liveRounds = [];
+    updateReadout();
+  }
+
+  // --- animated round visuals: a pair of particles flying from the source
+  // out to Alice and Bob, with the question/answer chips and a win/lose flash ---
+  var liveRounds = []; // { x,y,a,b,win, t, showQuestion, showAnswer, done }
+
+  function beginAnimatedRound() {
+    var r = playLogicalRound();
+    liveRounds.push({
+      x: r.x, y: r.y, a: r.a, b: r.b, win: r.win,
+      t: 0
+    });
+  }
+
+  function drawStation(x, label, question, answer, flash) {
+    ctx.save();
+    // housing
+    var grad = ctx.createLinearGradient(0, midY - 34, 0, midY + 34);
+    grad.addColorStop(0, '#2a3244'); grad.addColorStop(0.5, '#1b2233'); grad.addColorStop(1, '#141827');
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    var rr = 6, bx = x - 28, by = midY - 34, bw = 56, bh = 68;
+    ctx.moveTo(bx + rr, by);
+    ctx.arcTo(bx + bw, by, bx + bw, by + bh, rr);
+    ctx.arcTo(bx + bw, by + bh, bx, by + bh, rr);
+    ctx.arcTo(bx, by + bh, bx, by, rr);
+    ctx.arcTo(bx, by, bx + bw, by, rr);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // label
+    ctx.fillStyle = 'rgba(232,193,92,0.9)';
+    ctx.font = '600 15px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, midY + 5);
+    ctx.restore();
+
+    // question chip (above)
+    if (question !== null) {
+      drawChip(x, midY - 60, question, 'rgba(94,200,216,0.95)', '?');
+    }
+    // answer chip (below)
+    if (answer !== null) {
+      drawChip(x, midY + 60, answer, 'rgba(232,193,92,0.95)', '=');
+    }
+    // win/lose flash ring
+    if (flash) {
+      ctx.save();
+      ctx.strokeStyle = flash.win ? 'rgba(120,210,140,' + flash.alpha + ')' : 'rgba(255,122,77,' + flash.alpha + ')';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x, midY, 46 + flash.expand, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawChip(x, y, value, color, prefix) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0a0d16';
+    ctx.font = '600 13px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(value), x, y + 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  }
+
+  function drawSource() {
+    var pulse = 0.5 + 0.5 * Math.sin(clockT * 2.6);
+    ctx.save();
+    ctx.shadowColor = 'rgba(232,193,92,0.9)';
+    ctx.shadowBlur = 10 + pulse * 6;
+    ctx.fillStyle = 'rgba(94,200,216,0.9)';
+    ctx.beginPath(); ctx.arc(sourceX - 4, midY, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(232,193,92,0.9)';
+    ctx.beginPath(); ctx.arc(sourceX + 4, midY, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWinRateBar() {
+    var barX0 = 130, barX1 = W - 130, barY = H - 46, barH = 10;
+    var rate = rounds > 0 ? wins / rounds : 0;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX0, barY, barX1 - barX0, barH);
+    ctx.fillStyle = 'rgba(232,193,92,0.85)';
+    ctx.fillRect(barX0, barY, (barX1 - barX0) * rate, barH);
+
+    function refLine(pct, label) {
+      var lx = barX0 + (barX1 - barX0) * pct;
+      ctx.strokeStyle = 'rgba(207,214,230,0.6)';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(lx, barY - 6); ctx.lineTo(lx, barY + barH + 6); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(207,214,230,0.85)';
+      ctx.font = '11px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, lx, barY - 10);
+    }
+    refLine(0.75, '75% classical max');
+    refLine(0.8536, '85.4% quantum max');
+    ctx.restore();
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawSource();
+
+    var q = null, a = null, ansB = null, qB = null, flashA = null, flashB = null;
+    for (var i = liveRounds.length - 1; i >= 0; i--) {
+      var r = liveRounds[i];
+      r.t += 1 / 60;
+      if (r.t < 0.9) {
+        q = r.x; qB = r.y;
+      } else if (r.t < 1.5) {
+        q = r.x; qB = r.y; a = r.a; ansB = r.b;
+      } else if (r.t < 2.1) {
+        q = r.x; qB = r.y; a = r.a; ansB = r.b;
+        var life = (r.t - 1.5) / 0.6;
+        flashA = { win: r.win, alpha: (1 - life) * 0.9, expand: life * 10 };
+        flashB = flashA;
+      } else {
+        liveRounds.splice(i, 1);
+      }
+    }
+
+    drawStation(aliceX, 'Alice', q, a, flashA);
+    drawStation(bobX, 'Bob', qB, ansB, flashB);
+    drawWinRateBar();
+
+    requestAnimationFrame(frame);
+  }
+
+  // --- controls ---
+  function setMode(m) {
+    mode = m;
+    document.getElementById('btn-mode-classical').classList.toggle('active', m === 'classical');
+    document.getElementById('btn-mode-quantum').classList.toggle('active', m === 'quantum');
+    updateReadout();
+  }
+
+  var fastTimer = null;
+  function playFast(n) {
+    var i = 0;
+    var visual = Math.min(n, 6);
+    var iv = setInterval(function () {
+      beginAnimatedRound();
+      i++;
+      if (i >= visual) {
+        clearInterval(iv);
+        for (var k = 0; k < n - visual; k++) playLogicalRound();
+      }
+    }, 260);
+  }
+
+  var continuousOn = false;
+  var continuousIv = null;
+  function toggleContinuous() {
+    continuousOn = !continuousOn;
+    var btn = document.getElementById('btn-continuous');
+    if (continuousOn) {
+      btn.textContent = 'Stop';
+      btn.classList.add('primary');
+      continuousIv = setInterval(beginAnimatedRound, 300);
+    } else {
+      btn.textContent = 'Continuous';
+      btn.classList.remove('primary');
+      clearInterval(continuousIv);
+      continuousIv = null;
+    }
+  }
+
+  document.getElementById('btn-one').addEventListener('click', beginAnimatedRound);
+  document.getElementById('btn-continuous').addEventListener('click', toggleContinuous);
+  document.getElementById('btn-fast').addEventListener('click', function () { playFast(1000); });
+  document.getElementById('btn-reset').addEventListener('click', resetAll);
+  document.getElementById('btn-mode-classical').addEventListener('click', function () { setMode('classical'); });
+  document.getElementById('btn-mode-quantum').addEventListener('click', function () { setMode('quantum'); });
+
+  updateReadout();
+  requestAnimationFrame(frame);
+})();
+</script>
