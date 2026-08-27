@@ -1,0 +1,540 @@
+<title>Two Slits</title>
+<style>
+  :root {
+    --bg: #f4f2ec;
+    --surface: #ffffff;
+    --surface-2: #eae7dd;
+    --border: #d8d3c4;
+    --ink: #17140f;
+    --ink-dim: #5a5646;
+    --gold: #9c7a1f;
+    --gold-bright: #c9a227;
+    --cyan: #0f8b9e;
+    --warm: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16;
+      --surface: #12172400;
+      --surface-2: #161c2b;
+      --border: #2a3244;
+      --ink: #ece7d8;
+      --ink-dim: #9aa1b5;
+      --gold: #c9a227;
+      --gold-bright: #e8c15c;
+      --cyan: #5ec8d8;
+      --warm: #ffb347;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16;
+    --surface: #12172400;
+    --surface-2: #161c2b;
+    --border: #2a3244;
+    --ink: #ece7d8;
+    --ink-dim: #9aa1b5;
+    --gold: #c9a227;
+    --gold-bright: #e8c15c;
+    --cyan: #5ec8d8;
+    --warm: #ffb347;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 24px 72px;
+  }
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+  .dek {
+    font-size: 1rem;
+    color: var(--ink-dim);
+    max-width: 60ch;
+    line-height: 1.55;
+    margin: 10px 0 36px;
+  }
+  .dek a { color: var(--cyan); }
+
+  .stage {
+    background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  :root[data-theme="light"] .stage,
+  :root:not([data-theme="dark"]) .stage {
+    background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .readout {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: #cfd6e6;
+    letter-spacing: 0.02em;
+    display: flex;
+    gap: 18px;
+  }
+  .readout span b {
+    color: var(--gold-bright);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  @media (max-width: 640px) {
+    .panel { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 18px;
+  }
+  .card h2 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    color: var(--ink-dim);
+    margin: 0 0 12px;
+  }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.86rem;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #16130a;
+    font-weight: 600;
+  }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-label {
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+  .toggle-label small {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--ink-dim);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex: 0 0 auto;
+  }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    transition: background 0.15s;
+  }
+  .switch .thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    background: var(--surface, #fff);
+    border-radius: 999px;
+    transition: transform 0.15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .switch input:checked + .track { background: var(--cyan); }
+  .switch input:checked + .track + .thumb { transform: translateX(18px); }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--cyan);
+  }
+  .slider-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--gold-bright);
+    font-variant-numeric: tabular-nums;
+  }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.86rem;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+  footer strong { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;1</div>
+    <h1>Two Slits, One Question</h1>
+  </header>
+  <p class="dek">
+    Fire particles at a barrier with two slits, one at a time. Watch the pattern that builds up on the
+    screen behind it &mdash; then turn on the which-path detector and watch the interference disappear.
+    This is the experiment the book keeps coming back to.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>fired&nbsp;<b id="rd-count">0</b></span>
+      <span>detector&nbsp;<b id="rd-detector">off</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="640" role="img" aria-label="Double-slit simulation: particles travel from an emitter through two slits toward a detector screen, building up a pattern of hits over time."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Fire Particles</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-one">Fire one</button>
+        <button id="btn-burst">Fire 200</button>
+        <button class="ghost" id="btn-reset">Reset screen</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Which-Path Detector</h2>
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Detector at the slits
+          <small>Tags each particle with which slit it used</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="detector-toggle">
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+      <div class="toggle-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div class="toggle-label" style="display:flex; justify-content:space-between;">
+          <span>Distinguishability<small style="display:inline">&nbsp;&mdash; how sure the detector is</small></span>
+          <span class="slider-value" id="dist-value">100%</span>
+        </div>
+        <input type="range" id="dist-slider" min="0" max="100" value="100">
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> with the detector off, each particle's amplitude passes through
+    both slits and interferes with itself &mdash; the buildup forms bands. Switch the detector on, and
+    which-path information becomes available; the interference term drops out and the pattern collapses
+    to two plain bands, one per slit. The distinguishability slider blends between the two, exactly the
+    way partial which-path information produces partial interference in the book's account of the
+    experiment.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var emitterX = 60;
+  var barrierX = 340;
+  var screenX = 1120;
+  var midY = H / 2;
+  var slitGap = 46;       // distance from center to each slit
+  var slitHeight = 34;
+
+  var slit1Y = midY - slitGap;
+  var slit2Y = midY + slitGap;
+
+  var histBins = 220;
+  var hist = new Float32Array(histBins);
+  var maxHist = 1;
+  var totalFired = 0;
+
+  var particles = []; // in-flight animated particles
+
+  var detectorOn = false;
+  var distinguishability = 1.0; // 0..1
+
+  function screenYToBin(y) {
+    var t = (y - 40) / (H - 80);
+    return Math.max(0, Math.min(histBins - 1, Math.floor(t * histBins)));
+  }
+  function binToScreenY(bin) {
+    var t = bin / histBins;
+    return 40 + t * (H - 80);
+  }
+
+  // Physics-flavored sampling: fringe pattern for coherent case,
+  // two-envelope sum for distinguishable case, blended by "visibility" V.
+  function sampleLandingY() {
+    var V = detectorOn ? (1 - distinguishability) : 1; // visibility of interference
+    // envelope: sum of two gaussian slit-diffraction humps
+    var sigma = 0.16; // spread of each slit's diffraction envelope, in normalized units
+    var freq = 26;    // fringe frequency across the screen
+
+    // rejection sampling against a bounded probability density
+    for (var tries = 0; tries < 40; tries++) {
+      var u = Math.random(); // normalized position -1..1
+      var x = u * 2 - 1;
+      var env = Math.exp(-(x * x) / (2 * sigma * sigma));
+      var fringe = 1 + V * Math.cos(freq * x);
+      var p = env * fringe; // unnormalized density, always >= 0 since V<=1
+      var pmax = 2.05; // slightly above the true max for safety margin
+      if (Math.random() * pmax < p) {
+        var t = (x + 1) / 2;
+        return 40 + t * (H - 80);
+      }
+    }
+    return midY;
+  }
+
+  function whichSlit() {
+    return Math.random() < 0.5 ? slit1Y : slit2Y;
+  }
+
+  function spawnParticle() {
+    var slitY = whichSlit();
+    var landY = sampleLandingY();
+    particles.push({
+      x: emitterX,
+      y: midY,
+      phase: 'toSlit',
+      slitY: slitY,
+      landY: landY,
+      speed: 9 + Math.random() * 2.5,
+      tagged: detectorOn
+    });
+  }
+
+  function fireOne() {
+    spawnParticle();
+  }
+
+  function fireBurst(n) {
+    var i = 0;
+    var iv = setInterval(function () {
+      spawnParticle();
+      i++;
+      if (i >= n) clearInterval(iv);
+    }, 12);
+  }
+
+  function resetScreen() {
+    hist.fill(0);
+    maxHist = 1;
+    totalFired = 0;
+    particles = [];
+    updateReadout();
+  }
+
+  function registerHit(y) {
+    var bin = screenYToBin(y);
+    hist[bin] += 1;
+    if (hist[bin] > maxHist) maxHist = hist[bin];
+    totalFired++;
+    updateReadout();
+  }
+
+  function updateReadout() {
+    document.getElementById('rd-count').textContent = totalFired.toString();
+    document.getElementById('rd-detector').textContent = detectorOn ? 'on' : 'off';
+  }
+
+  function drawApparatus() {
+    // emitter
+    ctx.save();
+    ctx.fillStyle = 'rgba(232,193,92,0.9)';
+    ctx.beginPath();
+    ctx.arc(emitterX, midY, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // barrier with two slits
+    ctx.fillStyle = '#1b2233';
+    ctx.fillRect(barrierX - 5, 20, 10, midY - slitGap - slitHeight / 2 - 20);
+    ctx.fillRect(barrierX - 5, midY - slitGap + slitHeight / 2, 10, (slitGap * 2 - slitHeight));
+    ctx.fillRect(barrierX - 5, midY + slitGap + slitHeight / 2, 10, H - 20 - (midY + slitGap + slitHeight / 2));
+
+    if (detectorOn) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(94,200,216,' + (0.35 + 0.4 * distinguishability) + ')';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 4]);
+      ctx.strokeRect(barrierX - 22, slit1Y - slitHeight / 2 - 6, 44, slitHeight + 12);
+      ctx.strokeRect(barrierX - 22, slit2Y - slitHeight / 2 - 6, 44, slitHeight + 12);
+      ctx.restore();
+    }
+
+    // screen line
+    ctx.strokeStyle = 'rgba(154,161,181,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(screenX, 20);
+    ctx.lineTo(screenX, H - 20);
+    ctx.stroke();
+  }
+
+  function drawHistogram() {
+    var barAreaX0 = screenX + 14;
+    var barAreaW = W - barAreaX0 - 30;
+    ctx.save();
+    for (var i = 0; i < histBins; i++) {
+      var v = hist[i] / maxHist;
+      if (v <= 0) continue;
+      var y = binToScreenY(i);
+      var barW = v * barAreaW;
+      var alpha = 0.55 + 0.35 * v;
+      ctx.fillStyle = 'rgba(255,179,71,' + alpha + ')';
+      ctx.fillRect(barAreaX0, y - 1.1, barW, 2.2);
+    }
+    ctx.restore();
+  }
+
+  function drawParticles(dt) {
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      if (p.phase === 'toSlit') {
+        var dx = p.slitY;
+        var targetX = barrierX;
+        var dir = targetX - p.x;
+        p.x += p.speed;
+        p.y = midY + (p.slitY - midY) * ((p.x - emitterX) / (targetX - emitterX));
+        if (p.x >= targetX) {
+          p.x = targetX;
+          p.y = p.slitY;
+          p.phase = 'toScreen';
+        }
+      } else if (p.phase === 'toScreen') {
+        var progress0 = (p.x - barrierX) / (screenX - barrierX);
+        p.x += p.speed;
+        var progress = Math.min(1, (p.x - barrierX) / (screenX - barrierX));
+        p.y = p.slitY + (p.landY - p.slitY) * progress;
+        if (p.x >= screenX) {
+          registerHit(p.landY);
+          particles.splice(i, 1);
+          continue;
+        }
+      }
+      // draw
+      var glow = p.tagged ? 'rgba(94,200,216,0.95)' : 'rgba(232,193,92,0.95)';
+      ctx.save();
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    // faint vignette background already via CSS gradient behind canvas; add subtle starfield dots
+    drawApparatus();
+    drawHistogram();
+    drawParticles();
+    requestAnimationFrame(frame);
+  }
+
+  // Starfield (drawn once to an offscreen-ish static overlay via CSS is simpler,
+  // but keep it minimal here for performance: skip per-frame regeneration)
+
+  document.getElementById('btn-one').addEventListener('click', fireOne);
+  document.getElementById('btn-burst').addEventListener('click', function () { fireBurst(200); });
+  document.getElementById('btn-reset').addEventListener('click', resetScreen);
+
+  var detToggle = document.getElementById('detector-toggle');
+  detToggle.addEventListener('change', function () {
+    detectorOn = detToggle.checked;
+    updateReadout();
+  });
+
+  var distSlider = document.getElementById('dist-slider');
+  var distValue = document.getElementById('dist-value');
+  distSlider.addEventListener('input', function () {
+    distinguishability = parseInt(distSlider.value, 10) / 100;
+    distValue.textContent = distSlider.value + '%';
+  });
+
+  updateReadout();
+  requestAnimationFrame(frame);
+})();
+</script>
