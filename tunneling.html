@@ -1,0 +1,532 @@
+<title>Through the Wall</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+
+  .slider-row { margin-bottom: 12px; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .lbl { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+  .slider-row .lbl b { color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 600; }
+  input[type="range"] { width: 100%; accent-color: var(--cyan); }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;1</div>
+    <h1>Through the Wall</h1>
+  </header>
+  <p class="dek">
+    An electron with less energy than the barrier in front of it should, classically, always bounce off.
+    Quantum mechanically its wave only mostly reflects &mdash; a real, calculable sliver keeps going, straight
+    through. Adjust the barrier and watch the exact transmission probability change.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>fired&nbsp;<b id="rd-count">0</b></span>
+      <span>transmitted&nbsp;<b id="rd-through">0</b></span>
+      <span>T&nbsp;(exact)&nbsp;<b id="rd-t">&mdash;</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="640" role="img" aria-label="A wave approaching a rectangular potential barrier, showing the probability density partly reflecting and partly tunneling through."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Fire Electrons</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-one">Fire one</button>
+        <button id="btn-continuous">Continuous</button>
+        <button class="ghost" id="btn-reset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Barrier &amp; Energy</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>Electron energy E</span><b id="val-e">4.0</b></div>
+        <input type="range" id="slider-e" min="1" max="8" step="0.1" value="4">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>Barrier height V&#8320;</span><b id="val-v0">6.0</b></div>
+        <input type="range" id="slider-v0" min="1" max="12" step="0.1" value="6">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>Barrier width L</span><b id="val-l">1.5</b></div>
+        <input type="range" id="slider-l" min="0.2" max="4" step="0.1" value="1.5">
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> the glowing curve is the exact steady-state probability density for an
+    electron wave meeting a rectangular barrier &mdash; oscillating on the left (incoming plus reflected wave),
+    decaying inside the barrier, and continuing as a smaller, uninterrupted wave on the right. The transmission
+    probability isn't approximated here; it's the standard closed-form result for a rectangular barrier,
+    T&nbsp;=&nbsp;1&nbsp;/&nbsp;(1&nbsp;+&nbsp;V&#8320;&sup2;sinh&sup2;(&kappa;L)&nbsp;/&nbsp;4E(V&#8320;&minus;E)),
+    with &kappa;&nbsp;=&nbsp;&radic;(2(V&#8320;&minus;E)). Notice how fast T collapses as the barrier gets only
+    slightly wider or taller &mdash; that exponential sensitivity is exactly why tunneling matters for a
+    scanning tunneling microscope's atomic resolution, and why doubling a transistor's insulating layer does
+    far more than double its leakage.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var midY = H / 2;
+  var clockT = 0;
+
+  // plot region for the barrier / wavefunction, in canvas px
+  var plotX0 = 90, plotX1 = W - 90;
+  var barrierTopY = 130, baselineY = H - 170;
+
+  var E = 4.0, V0 = 6.0, L = 1.5;
+  var count = 0, through = 0;
+  var T = 0;
+
+  // The x-axis of the physics problem spans a fixed abstract range; the
+  // barrier sits in the middle with width L, natural units (hbar = m = 1).
+  var xMin = -6, xMax = 6;
+  function xToPx(x) { return plotX0 + (x - xMin) / (xMax - xMin) * (plotX1 - plotX0); }
+
+  function computeT() {
+    if (Math.abs(V0 - E) < 1e-6) {
+      // limiting case at E = V0
+      return 1 / (1 + (V0 * L * L) / 2);
+    }
+    if (E < V0) {
+      var kappa = Math.sqrt(2 * (V0 - E));
+      var s = Math.sinh(kappa * L);
+      return 1 / (1 + (V0 * V0 * s * s) / (4 * E * (V0 - E)));
+    } else {
+      var k2 = Math.sqrt(2 * (E - V0));
+      var s2 = Math.sin(k2 * L);
+      return 1 / (1 + (V0 * V0 * s2 * s2) / (4 * E * (E - V0)));
+    }
+  }
+
+  // --- exact stationary-state wavefunction across the three regions,
+  // used only for the display curve (not for the T used in decisions —
+  // that always comes straight from computeT() above) ---
+  function psiProfile(nPoints) {
+    var k = Math.sqrt(2 * E);
+    var barrierComplex = E < V0;
+    var kappa = barrierComplex ? Math.sqrt(2 * (V0 - E)) : Math.sqrt(2 * (E - V0));
+
+    // Solve boundary conditions at x=0 and x=L for region coefficients.
+    // Region 1 (x<0): e^{ikx} + r e^{-ikx}
+    // Region 2 (0<x<L): A e^{kappa x} + B e^{-kappa x}   (E<V0)
+    //                   A e^{ik2 x} + B e^{-ik2 x}       (E>V0, k2=kappa here)
+    // Region 3 (x>L): t e^{ik(x-L)}
+    // Match psi and psi' at 0 and L (standard transfer-matrix algebra).
+    var t, r, A, B;
+    if (barrierComplex) {
+      var kap = kappa;
+      var ekL = Math.exp(kap * L), ekLm = Math.exp(-kap * L);
+      // Using the closed-form transfer matrix result for a real (tunneling) barrier:
+      var denom = ( (kap*kap - k*k) * (ekLm - ekL) ) ;
+      // Build via direct 4x4-free method: express in terms of sinh/cosh
+      var ch = Math.cosh(kap * L), sh = Math.sinh(kap * L);
+      var M11 = ch + 0.5 * (kap/k - k/kap) * sh * 0; // placeholder not used
+      // Simpler robust approach: solve the 4 linear equations numerically.
+      r = solveAndGetR(k, kap, L, true);
+      t = solveAndGetT(k, kap, L, true);
+      A = r.A; B = r.B; r = r.r; t = t;
+    } else {
+      var kap2 = kappa;
+      var rr = solveAndGetR(k, kap2, L, false);
+      var tt = solveAndGetT(k, kap2, L, false);
+      A = rr.A; B = rr.B; r = rr.r; t = tt;
+    }
+
+    var pts = [];
+    for (var i = 0; i < nPoints; i++) {
+      var x = xMin + (xMax - xMin) * i / (nPoints - 1);
+      var re = 0, im = 0;
+      if (x < 0) {
+        re = Math.cos(k * x) + r.re * Math.cos(-k * x) - r.im * Math.sin(-k * x);
+        im = Math.sin(k * x) + r.re * Math.sin(-k * x) + r.im * Math.cos(-k * x);
+      } else if (x <= L) {
+        if (barrierComplex) {
+          var ep = Math.exp(kappa * x), em = Math.exp(-kappa * x);
+          re = A.re * ep + B.re * em;
+          im = A.im * ep + B.im * em;
+        } else {
+          var c = Math.cos(kappa * x), s = Math.sin(kappa * x);
+          re = A.re * c - A.im * s + B.re * c + B.im * s;
+          im = A.re * s + A.im * c - B.re * s + B.im * c;
+        }
+      } else {
+        var ph = k * (x - L);
+        re = t.re * Math.cos(ph) - t.im * Math.sin(ph);
+        im = t.re * Math.sin(ph) + t.im * Math.cos(ph);
+      }
+      pts.push({ x: x, prob: re * re + im * im });
+    }
+    return pts;
+  }
+
+  // Complex linear algebra for the boundary-matching problem, solved
+  // directly via 2x2 complex systems (two matching points, two unknowns
+  // each stage), which is exact and avoids hand-expanding sinh/cosh algebra.
+  function cx(re, im) { return { re: re, im: im }; }
+  function cAdd(a, b) { return cx(a.re + b.re, a.im + b.im); }
+  function cSub(a, b) { return cx(a.re - b.re, a.im - b.im); }
+  function cMul(a, b) { return cx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+  function cDiv(a, b) {
+    var d = b.re * b.re + b.im * b.im;
+    return cx((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d);
+  }
+
+  // Returns { r, t, A, B } for the full scattering problem, using direct
+  // transfer-matrix composition (exact, standard method).
+  function solveScattering(k, kappa, L, tunneling) {
+    // Region 2 basis: tunneling -> {e^{kappa x}, e^{-kappa x}}; else -> {e^{i kappa x}, e^{-i kappa x}}
+    // At x=0: 1 + r = A + B ; ik(1 - r) = kappa2*(A - B)   where kappa2 = kappa (real) or i*kappa (oscillatory)
+    // At x=L: A e^{q L} + B e^{-q L} = t e^{i k (L-L)} = t ; region-2-derivative = ik * t
+    //   where q = kappa (tunneling, real exponent) or i*kappa (oscillatory, so e^{qL}=e^{i kappa L})
+    var qIsReal = tunneling;
+    function expPos(x) {
+      return qIsReal ? cx(Math.exp(kappa * x), 0) : cx(Math.cos(kappa * x), Math.sin(kappa * x));
+    }
+    function expNeg(x) {
+      return qIsReal ? cx(Math.exp(-kappa * x), 0) : cx(Math.cos(kappa * x), -Math.sin(kappa * x));
+    }
+    // derivative factor for region 2 growth/decay rate as a complex number
+    var qFactor = qIsReal ? cx(kappa, 0) : cx(0, kappa);
+
+    // Unknowns: r, A, B, t (all complex). Four linear equations:
+    // (1) 1 + r = A + B
+    // (2) i*k*(1 - r) = qFactor*A - qFactor*B
+    // (3) A*expPos(L) + B*expNeg(L) = t
+    // (4) qFactor*A*expPos(L) - qFactor*B*expNeg(L) = i*k*t
+    // Solve for A, B in terms of t first from (3)&(4), then use (1)&(2) to get r and t.
+    // From (3): A*eP + B*eN = t  =>  A = (t - B*eN)/eP
+    // Sub into (4): qFactor*(t - B*eN) - qFactor*B*eN = i*k*t
+    //   qFactor*t - qFactor*B*eN - qFactor*B*eN = i*k*t   (note: careful, redo properly below)
+    // Do this with plain 2x2 solve instead for clarity and correctness.
+    var eP = expPos(L), eN = expNeg(L);
+    // From (3): A*eP + B*eN - t = 0
+    // From (4): qFactor*A*eP - qFactor*B*eN - i*k*t = 0
+    // Treat as 2 equations in (A,B) with t as a free parameter = 1 (unnormalized),
+    // solve for A, B, then get r from (1)&(2), then normalize by actual t=1 case
+    // and rescale everything so incident amplitude is exactly 1.
+    var tGuess = cx(1, 0);
+    // eqs: A*eP + B*eN = tGuess
+    //      qFactor*A*eP - qFactor*B*eN = i*k*tGuess
+    // => A*eP = (tGuess + (i*k/qFactor)*tGuess) / 2   [adding the two, dividing qFactor out of 2nd]
+    var ik_over_q = cDiv(cx(0, k), qFactor);
+    var sum_ = cAdd(tGuess, cMul(ik_over_q, tGuess));
+    var diff_ = cSub(tGuess, cMul(ik_over_q, tGuess));
+    var A_ = cDiv(cx(sum_.re / 2, sum_.im / 2), eP);
+    var B_ = cDiv(cx(diff_.re / 2, diff_.im / 2), eN);
+
+    // Now apply (1) & (2) to get r (and the true overall scale, since we
+    // fixed tGuess=1 arbitrarily — incident amplitude is whatever (1) gives):
+    // 1 + r = A_ + B_        => r = A_ + B_ - 1
+    // ik(1-r) = qFactor*(A_-B_)
+    // These two should be consistent up to the overall scale; incident
+    // amplitude "1" on the left is what we actually want fixed, so solve
+    // properly: let incident amplitude = 1, unknowns r, A, B, t (t not
+    // fixed to 1). Redo as a clean 4-unknown linear solve instead.
+    return solveScatteringExact(k, kappa, L, qIsReal);
+  }
+
+  function solveScatteringExact(k, kappa, L, qIsReal) {
+    function expPos(x) { return qIsReal ? cx(Math.exp(kappa * x), 0) : cx(Math.cos(kappa * x), Math.sin(kappa * x)); }
+    function expNeg(x) { return qIsReal ? cx(Math.exp(-kappa * x), 0) : cx(Math.cos(kappa * x), -Math.sin(kappa * x)); }
+    var qFactor = qIsReal ? cx(kappa, 0) : cx(0, kappa);
+    var eP = expPos(L), eN = expNeg(L);
+
+    // Unknowns u = [r, A, B, t]. Equations (incident amplitude fixed at 1):
+    // (1) A + B - r = 1
+    // (2) qFactor*A - qFactor*B + i*k*r = i*k
+    // (3) eP*A + eN*B - t = 0
+    // (4) qFactor*eP*A - qFactor*eN*B - i*k*t = 0
+    // Solve this 4x4 complex linear system directly (Gaussian elimination).
+    var M = [
+      [cx(1,0), cx(1,0), cx(-1,0), cx(0,0)],
+      [qFactor, cMul(cx(-1,0),qFactor), cx(0,k), cx(0,0)],
+      [eP, eN, cx(0,0), cx(-1,0)],
+      [cMul(qFactor,eP), cMul(cMul(cx(-1,0),qFactor),eN), cx(0,0), cx(0,-k)]
+    ];
+    var rhs = [cx(1,0), cx(0,k), cx(0,0), cx(0,0)];
+    var sol = solveComplex4(M, rhs);
+    return { A: sol[0], B: sol[1], r: sol[2], t: sol[3] };
+  }
+
+  function solveComplex4(M, rhs) {
+    var n = 4;
+    var A = [];
+    for (var i = 0; i < n; i++) A.push(M[i].slice());
+    var b = rhs.slice();
+    for (var col = 0; col < n; col++) {
+      var piv = col;
+      var pivMag = A[col][col].re*A[col][col].re + A[col][col].im*A[col][col].im;
+      for (var rIdx = col+1; rIdx < n; rIdx++) {
+        var mag = A[rIdx][col].re*A[rIdx][col].re + A[rIdx][col].im*A[rIdx][col].im;
+        if (mag > pivMag) { piv = rIdx; pivMag = mag; }
+      }
+      if (piv !== col) {
+        var tmp = A[col]; A[col] = A[piv]; A[piv] = tmp;
+        var tmpB = b[col]; b[col] = b[piv]; b[piv] = tmpB;
+      }
+      for (var r2 = col+1; r2 < n; r2++) {
+        var factor = cDiv(A[r2][col], A[col][col]);
+        for (var c2 = col; c2 < n; c2++) A[r2][c2] = cSub(A[r2][c2], cMul(factor, A[col][c2]));
+        b[r2] = cSub(b[r2], cMul(factor, b[col]));
+      }
+    }
+    var x = new Array(n);
+    for (var i2 = n-1; i2 >= 0; i2--) {
+      var s = b[i2];
+      for (var j2 = i2+1; j2 < n; j2++) s = cSub(s, cMul(A[i2][j2], x[j2]));
+      x[i2] = cDiv(s, A[i2][i2]);
+    }
+    return x;
+  }
+
+  function solveAndGetR(k, kappa, L, tunneling) {
+    var s = solveScatteringExact(k, kappa, L, tunneling);
+    return { r: s.r, A: s.A, B: s.B };
+  }
+  function solveAndGetT(k, kappa, L, tunneling) {
+    var s = solveScatteringExact(k, kappa, L, tunneling);
+    return s.t;
+  }
+
+  function recompute() {
+    T = computeT();
+    document.getElementById('rd-t').textContent = (T * 100).toFixed(3) + '%';
+  }
+
+  // --- particle stream: sampled outcomes using the EXACT T above, purely
+  // for the "fire electrons at it" interaction; the curve above is the
+  // separate exact stationary-state profile, always kept in sync ---
+  var particles = [];
+  function fireOne() {
+    var willPass = Math.random() < T;
+    count++;
+    if (willPass) through++;
+    document.getElementById('rd-count').textContent = count.toString();
+    document.getElementById('rd-through').textContent = through.toString();
+    particles.push({ x: xMin, willPass: willPass, resolved: false, trail: [] });
+  }
+  function resetCounts() {
+    count = 0; through = 0; particles = [];
+    document.getElementById('rd-count').textContent = '0';
+    document.getElementById('rd-through').textContent = '0';
+  }
+
+  var continuousOn = false, continuousIv = null;
+  function toggleContinuous() {
+    continuousOn = !continuousOn;
+    var btn = document.getElementById('btn-continuous');
+    if (continuousOn) {
+      btn.textContent = 'Stop'; btn.classList.add('primary');
+      continuousIv = setInterval(fireOne, 500);
+    } else {
+      btn.textContent = 'Continuous'; btn.classList.remove('primary');
+      clearInterval(continuousIv); continuousIv = null;
+    }
+  }
+
+  // --- drawing ---
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 50; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawBarrier() {
+    var bx0 = xToPx(0), bx1 = xToPx(L);
+    var barHeightPx = Math.min(180, 20 + V0 * 14);
+    ctx.save();
+    ctx.fillStyle = 'rgba(184,89,15,0.28)';
+    ctx.strokeStyle = 'rgba(184,89,15,0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(bx0, baselineY - barHeightPx, bx1 - bx0, barHeightPx);
+    ctx.strokeRect(bx0, baselineY - barHeightPx, bx1 - bx0, barHeightPx);
+    ctx.fillStyle = 'rgba(255,179,120,0.85)';
+    ctx.font = '600 12px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('V₀', (bx0 + bx1) / 2, baselineY - barHeightPx - 8);
+    ctx.restore();
+  }
+
+  var curve = [];
+  function recomputeCurve() {
+    curve = psiProfile(220);
+    var maxP = 0.01;
+    for (var i = 0; i < curve.length; i++) maxP = Math.max(maxP, curve[i].prob);
+    curveScale = 140 / maxP;
+  }
+  var curveScale = 100;
+
+  function drawCurve() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(94,200,216,0.9)';
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = 'rgba(94,200,216,0.6)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    for (var i = 0; i < curve.length; i++) {
+      var px = xToPx(curve[i].x);
+      var py = baselineY - curve[i].prob * curveScale;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+    // baseline
+    ctx.save();
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(plotX0, baselineY); ctx.lineTo(plotX1, baselineY); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    var bx0 = xToPx(0), bx1 = xToPx(L);
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      var speed = 0.045;
+      if (!p.resolved) {
+        p.x += speed;
+        var px = xToPx(p.x);
+        if (px >= bx0 && px <= bx1 && !p.willPass) {
+          // reflect at a point inside the barrier region, proportional to
+          // how deep a rejected attempt "penetrates" — purely visual
+          if (p.x > 0.15) { p.dir = -1; p.resolved = 'reflecting'; }
+        }
+      } else if (p.resolved === 'reflecting') {
+        p.x -= speed;
+        if (p.x <= xMin) { particles.splice(i, 1); continue; }
+      }
+      if (p.x >= xMax) { particles.splice(i, 1); continue; }
+
+      p.trail.push(p.x);
+      if (p.trail.length > 10) p.trail.shift();
+      var color = p.willPass ? '94,200,216' : '232,193,92';
+      ctx.save();
+      for (var t = 0; t < p.trail.length; t++) {
+        var tx = xToPx(p.trail[t]);
+        var ta = (t + 1) / p.trail.length * 0.4;
+        ctx.fillStyle = 'rgba(' + color + ',' + ta + ')';
+        ctx.beginPath(); ctx.arc(tx, midY + 210, 2, 0, Math.PI * 2); ctx.fill();
+      }
+      var hx = xToPx(p.x);
+      ctx.shadowColor = 'rgba(' + color + ',0.9)';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = 'rgba(' + color + ',0.95)';
+      ctx.beginPath(); ctx.arc(hx, midY + 210, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawBarrier();
+    drawCurve();
+    drawParticles();
+    requestAnimationFrame(frame);
+  }
+
+  function onSliderChange() {
+    E = parseFloat(document.getElementById('slider-e').value);
+    V0 = parseFloat(document.getElementById('slider-v0').value);
+    L = parseFloat(document.getElementById('slider-l').value);
+    document.getElementById('val-e').textContent = E.toFixed(1);
+    document.getElementById('val-v0').textContent = V0.toFixed(1);
+    document.getElementById('val-l').textContent = L.toFixed(1);
+    recompute();
+    recomputeCurve();
+  }
+
+  document.getElementById('slider-e').addEventListener('input', onSliderChange);
+  document.getElementById('slider-v0').addEventListener('input', onSliderChange);
+  document.getElementById('slider-l').addEventListener('input', onSliderChange);
+  document.getElementById('btn-one').addEventListener('click', fireOne);
+  document.getElementById('btn-continuous').addEventListener('click', toggleContinuous);
+  document.getElementById('btn-reset').addEventListener('click', resetCounts);
+
+  recompute();
+  recomputeCurve();
+  requestAnimationFrame(frame);
+
+  // expose for automated verification during development
+  window.__debugComputeT = computeT;
+  window.__debugSetParams = function (e, v0, l) { E = e; V0 = v0; L = l; recompute(); recomputeCurve(); };
+  window.__debugGetCurveT = function () {
+    // |psi|^2 at the far right of the plotted region equals |t|^2 exactly,
+    // since region 3 is a pure transmitted wave of constant modulus.
+    return curve[curve.length - 1].prob;
+  };
+  window.__debugGetReflectionCheck = function () {
+    var k = Math.sqrt(2 * E);
+    var tunneling = E < V0;
+    var kappaOrK2 = tunneling ? Math.sqrt(2 * (V0 - E)) : Math.sqrt(2 * (E - V0));
+    var s = solveScatteringExact(k, kappaOrK2, L, tunneling);
+    var Rmag = s.r.re * s.r.re + s.r.im * s.r.im;
+    var Tmag = s.t.re * s.t.re + s.t.im * s.t.im;
+    return { R: Rmag, T: Tmag, sum: Rmag + Tmag };
+  };
+})();
+</script>
