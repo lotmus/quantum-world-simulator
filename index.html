@@ -524,7 +524,7 @@
   var detToggle = document.getElementById('detector-toggle');
   detToggle.addEventListener('change', function () {
     detectorOn = detToggle.checked;
-    updateReadout();
+    resetScreen();
   });
 
   var distSlider = document.getElementById('dist-slider');
@@ -532,6 +532,7 @@
   distSlider.addEventListener('input', function () {
     distinguishability = parseInt(distSlider.value, 10) / 100;
     distValue.textContent = distSlider.value + '%';
+    resetScreen();
   });
 
   updateReadout();
