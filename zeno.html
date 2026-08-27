@@ -1,0 +1,325 @@
+<title>A Watched Pot</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+
+  .slider-row { margin-bottom: 12px; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .lbl { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+  .slider-row .lbl b { color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 600; }
+  input[type="range"] { width: 100%; accent-color: var(--cyan); }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;1</div>
+    <h1>A Watched Pot</h1>
+  </header>
+  <p class="dek">
+    An unstable system coupled to a decay channel, checked over and over during a fixed stretch of time.
+    The curve shows how much of the system survives that stretch as a function of how often you check it
+    &mdash; the same setup, and the same freezing effect, from the actual 1990 ion-trap experiment that first
+    measured this.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>checks&nbsp;in&nbsp;this&nbsp;run&nbsp;<b id="rd-n">1</b></span>
+      <span>survival&nbsp;probability&nbsp;<b id="rd-p">&mdash;</b></span>
+      <span>vs.&nbsp;unwatched&nbsp;<b id="rd-regime">&mdash;</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="620" role="img" aria-label="A chart of survival probability over a fixed time interval as a function of number of measurements, alongside an animated single run."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Run a Single Trajectory</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>Number of checks, N</span><b id="val-n">1</b></div>
+        <input type="range" id="slider-n" min="0" max="300" step="1" value="0">
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="btn-run">Run this many checks</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>System</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>Damping / leak rate &Gamma;</span><b id="val-gamma">1.5</b></div>
+        <input type="range" id="slider-gamma" min="1" max="8" step="0.1" value="1.5">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>Total elapsed time T</span><b id="val-t">4.0</b></div>
+        <input type="range" id="slider-t" min="1" max="6" step="0.5" value="4">
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> the curve plots survival probability after a fixed total time T,
+    as a function of how many equally-spaced measurements are packed into that stretch &mdash; N=1 means "don't
+    look until the end," large N means "check constantly." The system here is modeled as a driven two-level
+    system with an internal oscillation and a leak into a lost channel, the same kind of setup used in the
+    actual 1990 ion-trap experiment that first demonstrated this effect. However hard the leak channel pulls,
+    checking often enough always wins: the curve climbs toward certain survival as N grows, because any such
+    system's short-time behavior is quadratic, not linear, in the gap between checks &mdash; the mathematical
+    root of the Zeno effect. The book's anti-Zeno effect is real, but it needs a genuinely different kind of
+    system &mdash; a continuous reservoir of decay channels, not a single leak &mdash; and isn't shown here.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var clockT = 0;
+
+  var OMEGA = 1.0; // fixed internal Rabi-like frequency (natural unit)
+  var gamma = 1.5;
+  var Ttotal = 4.0;
+
+  // Survival amplitude c0(t) for the damped two-level system:
+  //   i d/dt [c0,c1] = [[0, Omega/2],[Omega/2, -i*gamma/2]] [c0,c1],  c0(0)=1, c1(0)=0
+  // Closed form (standard damped-Rabi result), branching on underdamped
+  // vs overdamped based on Omega vs gamma/2.
+  function survivalAmplitudeSq(t) {
+    if (t <= 0) return 1;
+    var disc = OMEGA * OMEGA - (gamma * gamma) / 4;
+    var envelope = Math.exp(-gamma * t / 4);
+    var re;
+    if (Math.abs(disc) < 1e-9) {
+      // Critical damping (Omega = gamma/2 exactly): the underdamped and
+      // overdamped formulas both have a removable 0/0 here. Their common
+      // limit, taken analytically (sin(x)/x -> 1 as x -> 0), is used
+      // directly rather than evaluating the indeterminate form numerically.
+      re = envelope * (1 + gamma * t / 4);
+    } else if (disc > 0) {
+      var Wp = Math.sqrt(disc);
+      re = envelope * (Math.cos(Wp * t / 2) + (gamma / (2 * Wp)) * Math.sin(Wp * t / 2));
+    } else {
+      var Wpp = Math.sqrt(-disc);
+      re = envelope * (Math.cosh(Wpp * t / 2) + (gamma / (2 * Wpp)) * Math.sinh(Wpp * t / 2));
+    }
+    return re * re;
+  }
+
+  // Numerical cross-check via RK4 on the same ODE, independent of the
+  // closed-form algebra above.
+  function survivalAmplitudeSqRK4(t, steps) {
+    steps = steps || 400;
+    var dt = t / steps;
+    var c0re = 1, c0im = 0, c1re = 0, c1im = 0;
+    function deriv(c0re, c0im, c1re, c1im) {
+      // i dc0/dt = (Omega/2) c1  =>  dc0/dt = -i*(Omega/2)*c1
+      var dc0re = (OMEGA / 2) * c1im;
+      var dc0im = -(OMEGA / 2) * c1re;
+      // i dc1/dt = (Omega/2) c0 - i*(gamma/2) c1
+      //   dc1/dt = -i*(Omega/2)*c0 - (gamma/2)*c1
+      var dc1re = (OMEGA / 2) * c0im - (gamma / 2) * c1re;
+      var dc1im = -(OMEGA / 2) * c0re - (gamma / 2) * c1im;
+      return [dc0re, dc0im, dc1re, dc1im];
+    }
+    for (var i = 0; i < steps; i++) {
+      var k1 = deriv(c0re, c0im, c1re, c1im);
+      var k2 = deriv(c0re + dt/2*k1[0], c0im + dt/2*k1[1], c1re + dt/2*k1[2], c1im + dt/2*k1[3]);
+      var k3 = deriv(c0re + dt/2*k2[0], c0im + dt/2*k2[1], c1re + dt/2*k2[2], c1im + dt/2*k2[3]);
+      var k4 = deriv(c0re + dt*k3[0], c0im + dt*k3[1], c1re + dt*k3[2], c1im + dt*k3[3]);
+      c0re += dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]);
+      c0im += dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1]);
+      c1re += dt/6*(k1[2]+2*k2[2]+2*k3[2]+k4[2]);
+      c1im += dt/6*(k1[3]+2*k2[3]+2*k3[3]+k4[3]);
+    }
+    return c0re * c0re + c0im * c0im;
+  }
+
+  function survivalAfterN(N, T) {
+    if (N <= 0) return survivalAmplitudeSq(T);
+    var tau = T / N;
+    var p = Math.pow(survivalAmplitudeSq(tau), N);
+    return p;
+  }
+
+  // --- curve of survival vs N, for the current gamma/T ---
+  var Nvals = [];
+  (function buildNvals() {
+    // log-ish spacing from N=1 to N=300
+    for (var i = 0; i <= 60; i++) {
+      var n = Math.round(Math.pow(300, i / 60));
+      if (Nvals.indexOf(n) === -1) Nvals.push(Math.max(1, n));
+    }
+  })();
+
+  function curvePoints() {
+    return Nvals.map(function (n) { return { n: n, p: survivalAfterN(n, Ttotal) }; });
+  }
+
+  // --- plotting ---
+  var plotX0 = 90, plotX1 = W - 60, plotY0 = 90, plotY1 = H - 200;
+  function nToPx(n) {
+    var lognorm = Math.log(n) / Math.log(300);
+    return plotX0 + lognorm * (plotX1 - plotX0);
+  }
+  function pToPx(p) { return plotY1 - p * (plotY1 - plotY0); }
+
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 45; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawAxes() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(plotX0, plotY0); ctx.lineTo(plotX0, plotY1); ctx.lineTo(plotX1, plotY1); ctx.stroke();
+    ctx.fillStyle = 'rgba(207,214,230,0.6)';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'left'; ctx.fillText('P=1', plotX0 - 40, plotY0 + 4);
+    ctx.fillText('P=0', plotX0 - 40, plotY1 + 4);
+    ctx.textAlign = 'center';
+    ctx.fillText('N=1', nToPx(1), plotY1 + 16);
+    ctx.fillText('N=300 (frequent checking)', nToPx(300) - 50, plotY1 + 16);
+    // baseline reference: survival with no intermediate checks (N=1)
+    var baseline = survivalAfterN(1, Ttotal);
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = 'rgba(207,214,230,0.35)';
+    ctx.beginPath(); ctx.moveTo(plotX0, pToPx(baseline)); ctx.lineTo(plotX1, pToPx(baseline)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawCurve() {
+    var pts = curvePoints();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,193,92,0.9)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(232,193,92,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    for (var i = 0; i < pts.length; i++) {
+      var px = nToPx(pts[i].n), py = pToPx(pts[i].p);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // classify the regime by comparing the high-N end to the baseline
+    var baseline = survivalAfterN(1, Ttotal);
+    var highN = survivalAfterN(300, Ttotal);
+    var multiplier = baseline > 1e-9 ? (highN / baseline) : null;
+    document.getElementById('rd-regime').textContent = multiplier ? (multiplier.toFixed(1) + '× more likely to survive') : 'no unwatched survival to compare';
+  }
+
+  // --- single-trajectory animated run ---
+  var runActive = false, runN = 0, runStep = 0, runT = 0, runClock = 0;
+  function startRun() {
+    runN = parseInt(document.getElementById('slider-n').value, 10);
+    runStep = 0; runClock = 0; runActive = true;
+    document.getElementById('rd-n').textContent = Math.max(1, runN).toString();
+  }
+
+  var markerFlash = null;
+  function drawLiveMarker() {
+    if (!runActive) return;
+    var tau = Ttotal / Math.max(1, runN);
+    runClock += 1 / 60;
+    if (runClock >= Math.max(0.05, Math.min(0.4, 3 / Math.max(1, runN)))) {
+      runClock = 0;
+      runStep++;
+      markerFlash = { t: 0 };
+      var pSoFar = survivalAfterN(Math.min(runStep, Math.max(1, runN)), Math.min(runStep, Math.max(1, runN)) * tau);
+      document.getElementById('rd-p').textContent = (pSoFar * 100).toFixed(2) + '%';
+      if (runStep >= Math.max(1, runN)) runActive = false;
+    }
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawAxes();
+    drawCurve();
+    drawLiveMarker();
+    if (markerFlash) {
+      markerFlash.t += 1/60;
+      if (markerFlash.t > 0.3) markerFlash = null;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function onSliderChange() {
+    gamma = parseFloat(document.getElementById('slider-gamma').value);
+    Ttotal = parseFloat(document.getElementById('slider-t').value);
+    document.getElementById('val-gamma').textContent = gamma.toFixed(1);
+    document.getElementById('val-t').textContent = Ttotal.toFixed(1);
+  }
+  document.getElementById('slider-gamma').addEventListener('input', onSliderChange);
+  document.getElementById('slider-t').addEventListener('input', onSliderChange);
+  document.getElementById('slider-n').addEventListener('input', function () {
+    document.getElementById('val-n').textContent = this.value;
+  });
+  document.getElementById('btn-run').addEventListener('click', startRun);
+
+  requestAnimationFrame(frame);
+
+  window.__debugSurvival = survivalAmplitudeSq;
+  window.__debugSurvivalRK4 = survivalAmplitudeSqRK4;
+  window.__debugSetGamma = function (g) { gamma = g; };
+  window.__debugSurvivalAfterN = survivalAfterN;
+})();
+</script>
