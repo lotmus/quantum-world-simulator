@@ -250,7 +250,7 @@
     <h1>Two Slits, One Question</h1>
   </header>
   <p class="dek">
-    Fire particles at a barrier with two slits, one at a time. Watch the pattern that builds up on the
+    Fire electrons, one at a time, from an electron gun at a barrier with two slits. Watch the pattern that builds up on the
     screen behind it &mdash; then turn on the which-path detector and watch the interference disappear.
     This is the experiment the book keeps coming back to.
   </p>
@@ -260,12 +260,12 @@
       <span>fired&nbsp;<b id="rd-count">0</b></span>
       <span>detector&nbsp;<b id="rd-detector">off</b></span>
     </div>
-    <canvas id="scene" width="1200" height="640" role="img" aria-label="Double-slit simulation: particles travel from an emitter through two slits toward a detector screen, building up a pattern of hits over time."></canvas>
+    <canvas id="scene" width="1200" height="640" role="img" aria-label="Double-slit simulation: an electron gun fires electrons through two slits toward a detector screen, building up a pattern of hits over time."></canvas>
   </div>
 
   <div class="panel">
     <div class="card">
-      <h2>Fire Particles</h2>
+      <h2>Fire Electrons</h2>
       <div class="btn-row">
         <button class="primary" id="btn-one">Fire one</button>
         <button id="btn-continuous">Continuous</button>
@@ -278,7 +278,7 @@
       <div class="toggle-row">
         <div class="toggle-label">
           Detector at the slits
-          <small>Tags each particle with which slit it used</small>
+          <small>Tags each electron with which slit it used</small>
         </div>
         <label class="switch">
           <input type="checkbox" id="detector-toggle">
@@ -297,7 +297,7 @@
   </div>
 
   <footer>
-    <strong>What you're seeing:</strong> with the detector off, each particle's amplitude passes through
+    <strong>What you're seeing:</strong> with the detector off, each electron's amplitude passes through
     both slits and interferes with itself &mdash; the buildup forms bands. Switch the detector on, and
     which-path information becomes available; the interference term drops out and the pattern collapses
     to two plain bands, one per slit. The distinguishability slider blends between the two, exactly the
@@ -506,14 +506,137 @@
     document.getElementById('rd-detector').textContent = detectorOn ? 'on' : 'off';
   }
 
-  function drawApparatus() {
-    // emitter
+  // Ambient starfield: a fixed set of dim, gently twinkling background dots,
+  // so the scene has quiet motion even before anything is fired.
+  var clockT = 0;
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 55; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 0.5 + Math.random() * 1.1,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.8
+      });
+    }
+  })();
+  function drawStars() {
     ctx.save();
-    ctx.fillStyle = 'rgba(232,193,92,0.9)';
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Faint expanding ripples spawned as each particle passes through a slit —
+  // a visual echo of the wave nature the histogram is built from, and a
+  // constant sense of motion whenever particles are actually flowing.
+  var ripples = [];
+  function spawnRipple(x, y, tagged) {
+    if (ripples.length >= 30) return;
+    ripples.push({ x: x, y: y, t: 0, tagged: tagged });
+  }
+  function drawRipples() {
+    for (var i = ripples.length - 1; i >= 0; i--) {
+      var r = ripples[i];
+      r.t += 1 / 60;
+      var life = r.t / 0.9; // 0..1 over ~900ms
+      if (life >= 1) { ripples.splice(i, 1); continue; }
+      var radius = 6 + life * 70;
+      var alpha = (1 - life) * 0.22;
+      var color = r.tagged ? '94,200,216' : '232,193,92';
+      ctx.save();
+      ctx.strokeStyle = 'rgba(' + color + ',' + alpha + ')';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, radius, -Math.PI / 2.4, Math.PI / 2.4);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Emitter glows with a slow constant "breathe" plus brightens with how
+  // many particles are actually in flight, so it always feels alive.
+  // The electron gun: a small housing with a barrel aimed at the barrier and
+  // a bright aperture where electrons actually originate. Real apparatus,
+  // not a bare dot — this is what an electron gun is called in an actual
+  // electron microscope or CRT.
+  function drawEmitter() {
+    var breathe = 0.5 + 0.5 * Math.sin(clockT * 2.2);
+    var activity = Math.min(1, particles.length / 25);
+    var bodyX0 = emitterX - 30, bodyW = 24, bodyH = 22;
+    var barrelW = 10;
+
+    ctx.save();
+
+    // mounting foot
+    ctx.strokeStyle = 'rgba(90,99,122,0.55)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(emitterX, midY, 7, 0, Math.PI * 2);
+    ctx.moveTo(bodyX0 + bodyW / 2, midY + bodyH / 2);
+    ctx.lineTo(bodyX0 + bodyW / 2, midY + bodyH / 2 + 10);
+    ctx.stroke();
+
+    // housing body, subtle vertical gradient for a metallic feel
+    var grad = ctx.createLinearGradient(0, midY - bodyH / 2, 0, midY + bodyH / 2);
+    grad.addColorStop(0, '#2a3244');
+    grad.addColorStop(0.5, '#1b2233');
+    grad.addColorStop(1, '#141827');
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    roundRect(bodyX0, midY - bodyH / 2, bodyW, bodyH, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // barrel, from the housing to the emission point
+    ctx.fillStyle = '#1b2233';
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.fillRect(bodyX0 + bodyW - 2, midY - barrelW / 2, emitterX - (bodyX0 + bodyW - 2), barrelW);
+    ctx.strokeRect(bodyX0 + bodyW - 2, midY - barrelW / 2, emitterX - (bodyX0 + bodyW - 2), barrelW);
+
+    // small status light on the housing: reflects detector state, matching
+    // the same colors used for tagged/untagged electrons
+    var lightColor = detectorOn ? '94,200,216' : '232,193,92';
+    var lightAlpha = 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(clockT * 3));
+    ctx.fillStyle = 'rgba(' + lightColor + ',' + lightAlpha + ')';
+    ctx.beginPath();
+    ctx.arc(bodyX0 + 7, midY, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // the aperture glow — this is the actual point electrons spawn from
+    var radius = 4.5 + breathe * 1.2 + activity * 2.5;
+    var alpha = Math.min(1, 0.8 + breathe * 0.15 + activity * 0.1);
+    ctx.save();
+    ctx.shadowColor = 'rgba(232,193,92,0.9)';
+    ctx.shadowBlur = 9 + activity * 12;
+    ctx.fillStyle = 'rgba(232,193,92,' + alpha + ')';
+    ctx.beginPath();
+    ctx.arc(emitterX, midY, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawApparatus() {
+    drawEmitter();
 
     // barrier with two slits
     ctx.fillStyle = '#1b2233';
@@ -569,6 +692,7 @@
           p.x = targetX;
           p.y = p.slitY;
           p.phase = 'toScreen';
+          spawnRipple(barrierX, p.slitY, p.tagged);
         }
       } else if (p.phase === 'toScreen') {
         var progress0 = (p.x - barrierX) / (screenX - barrierX);
@@ -611,10 +735,12 @@
   }
 
   function frame() {
+    clockT += 1 / 60;
     ctx.clearRect(0, 0, W, H);
-    // faint vignette background already via CSS gradient behind canvas; add subtle starfield dots
+    drawStars();
     drawApparatus();
     drawDetectorPulse();
+    drawRipples();
     drawHistogram();
     drawParticles();
     drawFlashes();
