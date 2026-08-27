@@ -1,0 +1,395 @@
+<title>The Qubit's Sphere</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; cursor: grab; touch-action: none; }
+  canvas:active { cursor: grabbing; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .hint { position: absolute; bottom: 10px; right: 14px; font-size: 0.68rem; color: rgba(207,214,230,0.5); font-family: 'IBM Plex Sans', sans-serif; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+  button.wide { flex: 1 1 100%; }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;10</div>
+    <h1>The Qubit's Sphere</h1>
+  </header>
+  <p class="dek">
+    Every possible state of a single qubit is a point on this sphere &mdash; the north pole is |0&#10217;, the
+    south pole is |1&#10217;, and everywhere else is a superposition of both. Apply gates and watch the state
+    rotate; drag to look around; measure to collapse it back to a pole.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>state&nbsp;<b id="rd-state">|0&#10217;</b></span>
+      <span>P(0)&nbsp;<b id="rd-p0">100%</b></span>
+      <span>P(1)&nbsp;<b id="rd-p1">0%</b></span>
+      <span>measured&nbsp;<b id="rd-count">0</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="700" role="img" aria-label="Bloch sphere showing a single qubit's quantum state as a point on a sphere, with the north pole as state zero and the south pole as state one."></canvas>
+    <div class="hint">drag to rotate the view</div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Gates</h2>
+      <div class="btn-row">
+        <button id="btn-x">X</button>
+        <button id="btn-y">Y</button>
+        <button id="btn-z">Z</button>
+        <button id="btn-h">H</button>
+        <button id="btn-s">S</button>
+        <button id="btn-t">T</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Measure &amp; Reset</h2>
+      <div class="btn-row">
+        <button class="primary wide" id="btn-measure">Measure</button>
+        <button class="ghost" id="btn-reset">Reset to |0&#10217;</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> the arrow is the qubit's actual quantum state, not a probability cloud
+    &mdash; a single point, anywhere on the sphere's surface. X, Y and Z flip the state 180&deg; around their
+    respective axes. H swaps the roles of "certain" and "uncertain": it takes |0&#10217; to an equal
+    superposition sitting on the equator. S and T are smaller rotations around the vertical axis &mdash; they
+    change the qubit's phase without touching how likely a 0 or 1 outcome is. Measuring always returns a
+    classical 0 or 1, with probability set by how close the arrow sits to each pole &mdash; P(0) =
+    (1+z)/2 &mdash; and the arrow snaps to whichever pole was found, exactly the collapse this book keeps
+    coming back to.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W / 2, cy = H / 2 + 10;
+  var R = 210; // sphere radius in screen px
+
+  var azim = 0.55;   // radians, user-draggable
+  var elev = 0.42;   // radians, fixed tilt
+  var clockT = 0;
+
+  // --- state: Bloch vector (x,y,z), plus an animated "from" vector for
+  // smooth gate transitions, and a fading trail of recent positions ---
+  var state = { x: 0, y: 0, z: 1 };
+  var animFrom = null, animTo = null, animT = 0;
+  var trail = [];
+  var measuredCount = 0;
+
+  function project(x, y, z) {
+    var x1 = x * Math.cos(azim) - y * Math.sin(azim);
+    var y1 = x * Math.sin(azim) + y * Math.cos(azim);
+    var z1 = z;
+    var y2 = y1 * Math.cos(elev) - z1 * Math.sin(elev);
+    var z2 = y1 * Math.sin(elev) + z1 * Math.cos(elev);
+    var x2 = x1;
+    return { sx: cx + x2 * R, sy: cy - z2 * R, depth: y2 };
+  }
+
+  // --- gates: exact Bloch-sphere rotations for each standard gate ---
+  function applyGate(name) {
+    var v = currentVector();
+    var r;
+    if (name === 'X') r = { x: v.x, y: -v.y, z: -v.z };
+    else if (name === 'Y') r = { x: -v.x, y: v.y, z: -v.z };
+    else if (name === 'Z') r = { x: -v.x, y: -v.y, z: v.z };
+    else if (name === 'H') r = { x: v.z, y: -v.y, z: v.x };
+    else if (name === 'S') r = zRotate(v, Math.PI / 2);
+    else if (name === 'T') r = zRotate(v, Math.PI / 4);
+    else return;
+    startAnim(v, normalize(r));
+  }
+  function zRotate(v, a) {
+    return { x: v.x * Math.cos(a) - v.y * Math.sin(a), y: v.x * Math.sin(a) + v.y * Math.cos(a), z: v.z };
+  }
+  function normalize(v) {
+    var n = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) || 1;
+    return { x: v.x / n, y: v.y / n, z: v.z / n };
+  }
+
+  function currentVector() {
+    if (animFrom && animTo) return slerp(animFrom, animTo, animT);
+    return state;
+  }
+  function slerp(a, b, t) {
+    // simple normalized linear interpolation — good enough for a short
+    // on-screen transition, and always stays on the sphere's surface
+    var x = a.x + (b.x - a.x) * t;
+    var y = a.y + (b.y - a.y) * t;
+    var z = a.z + (b.z - a.z) * t;
+    return normalize({ x: x, y: y, z: z });
+  }
+
+  function startAnim(from, to) {
+    animFrom = from; animTo = to; animT = 0;
+  }
+
+  function measure() {
+    var v = currentVector();
+    var p0 = (1 + v.z) / 2;
+    var outcome = Math.random() < p0 ? 0 : 1;
+    measuredCount++;
+    var target = outcome === 0 ? { x: 0, y: 0, z: 1 } : { x: 0, y: 0, z: -1 };
+    startAnim(v, target);
+    document.getElementById('rd-count').textContent = measuredCount.toString();
+    flashResult(outcome);
+  }
+
+  var resultFlash = null;
+  function flashResult(outcome) {
+    resultFlash = { outcome: outcome, t: 0 };
+  }
+
+  function resetState() {
+    state = { x: 0, y: 0, z: 1 };
+    animFrom = animTo = null;
+    trail = [];
+    updateReadout(state);
+  }
+
+  function updateReadout(v) {
+    var p0 = (1 + v.z) / 2, p1 = 1 - p0;
+    document.getElementById('rd-p0').textContent = Math.round(p0 * 100) + '%';
+    document.getElementById('rd-p1').textContent = Math.round(p1 * 100) + '%';
+    var label;
+    if (v.z > 0.995) label = '|0⟩';
+    else if (v.z < -0.995) label = '|1⟩';
+    else label = 'superposition';
+    document.getElementById('rd-state').textContent = label;
+  }
+
+  // --- drawing ---
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 50; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+
+  function circlePoints(axis, n) {
+    // returns n points around a unit circle lying in the plane
+    // perpendicular to `axis` ('x', 'y', or 'z')
+    var pts = [];
+    for (var i = 0; i <= n; i++) {
+      var t = (i / n) * Math.PI * 2;
+      var c = Math.cos(t), s = Math.sin(t);
+      if (axis === 'z') pts.push({ x: c, y: s, z: 0 });
+      else if (axis === 'y') pts.push({ x: c, y: 0, z: s });
+      else pts.push({ x: 0, y: c, z: s });
+    }
+    return pts;
+  }
+  var equator = circlePoints('z', 64);
+  var meridianXZ = circlePoints('y', 64);
+  var meridianYZ = circlePoints('x', 64);
+
+  function drawGreatCircle(pts, colorFront, colorBack) {
+    ctx.save();
+    ctx.lineWidth = 1;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = project(pts[i].x, pts[i].y, pts[i].z);
+      var p1 = project(pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
+      var behind = (p0.depth + p1.depth) < 0;
+      ctx.strokeStyle = behind ? colorBack : colorFront;
+      ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawAxisLine(dir, label, color) {
+    var p1 = project(dir.x * 1.28, dir.y * 1.28, dir.z * 1.28);
+    var p0 = project(-dir.x * 1.28, -dir.y * 1.28, -dir.z * 1.28);
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.font = '600 13px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, p1.sx, p1.sy - 8);
+    ctx.restore();
+  }
+
+  function drawSphereBody() {
+    var grad = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.15, cx, cy, R);
+    grad.addColorStop(0, 'rgba(94,120,160,0.16)');
+    grad.addColorStop(1, 'rgba(20,26,42,0.05)');
+    ctx.save();
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(154,161,181,0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawVector(v, alpha, isLive) {
+    var tip = project(v.x, v.y, v.z);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,193,92,' + alpha + ')';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tip.sx, tip.sy); ctx.stroke();
+    if (isLive) {
+      ctx.shadowColor = 'rgba(232,193,92,0.9)';
+      ctx.shadowBlur = 12;
+    }
+    ctx.fillStyle = 'rgba(232,193,92,' + alpha + ')';
+    ctx.beginPath(); ctx.arc(tip.sx, tip.sy, isLive ? 6 : 3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    return tip;
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawSphereBody();
+    drawGreatCircle(equator, 'rgba(94,200,216,0.5)', 'rgba(94,200,216,0.14)');
+    drawGreatCircle(meridianXZ, 'rgba(154,161,181,0.4)', 'rgba(154,161,181,0.1)');
+    drawGreatCircle(meridianYZ, 'rgba(154,161,181,0.4)', 'rgba(154,161,181,0.1)');
+    drawAxisLine({ x: 0, y: 0, z: 1 }, '|0⟩', 'rgba(232,193,92,0.85)');
+    drawAxisLine({ x: 1, y: 0, z: 0 }, '+X', 'rgba(207,214,230,0.6)');
+    drawAxisLine({ x: 0, y: 1, z: 0 }, '+Y', 'rgba(207,214,230,0.6)');
+    // south pole label (the +Z axis line already draws |0>, add |1> at the
+    // opposite end explicitly since drawAxisLine only labels one end)
+    var southP = project(0, 0, -1.28);
+    ctx.save();
+    ctx.fillStyle = 'rgba(94,200,216,0.85)';
+    ctx.font = '600 13px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('|1⟩', southP.sx, southP.sy + 16);
+    ctx.restore();
+
+    // advance the gate/measurement animation
+    var v;
+    if (animFrom && animTo) {
+      animT += 1 / 24; // ~400ms transition
+      if (animT >= 1) {
+        state = animTo;
+        animFrom = animTo = null;
+        v = state;
+        updateReadout(state);
+      } else {
+        v = slerp(animFrom, animTo, animT);
+      }
+      trail.push(v);
+      if (trail.length > 50) trail.shift();
+    } else {
+      v = state;
+      trail.length = 0;
+    }
+
+    // fading trail of the recent sweep
+    for (var i = 0; i < trail.length; i++) {
+      var ta = (i + 1) / trail.length * 0.4;
+      var tp = project(trail[i].x, trail[i].y, trail[i].z);
+      ctx.save();
+      ctx.fillStyle = 'rgba(94,200,216,' + ta + ')';
+      ctx.beginPath(); ctx.arc(tp.sx, tp.sy, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    drawVector(v, 0.95, true);
+
+    if (resultFlash) {
+      resultFlash.t += 1 / 60;
+      var life = resultFlash.t / 0.6;
+      if (life >= 1) { resultFlash = null; }
+      else {
+        var pole = resultFlash.outcome === 0 ? { x: 0, y: 0, z: 1 } : { x: 0, y: 0, z: -1 };
+        var pp = project(pole.x, pole.y, pole.z);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(120,210,140,' + (1 - life) * 0.9 + ')';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(pp.sx, pp.sy, 6 + life * 26, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // --- drag to orbit ---
+  var dragging = false, lastX = 0;
+  canvas.addEventListener('pointerdown', function (e) { dragging = true; lastX = e.clientX; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointerup', function () { dragging = false; });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX;
+    lastX = e.clientX;
+    azim += dx * 0.008;
+  });
+
+  document.getElementById('btn-x').addEventListener('click', function () { applyGate('X'); });
+  document.getElementById('btn-y').addEventListener('click', function () { applyGate('Y'); });
+  document.getElementById('btn-z').addEventListener('click', function () { applyGate('Z'); });
+  document.getElementById('btn-h').addEventListener('click', function () { applyGate('H'); });
+  document.getElementById('btn-s').addEventListener('click', function () { applyGate('S'); });
+  document.getElementById('btn-t').addEventListener('click', function () { applyGate('T'); });
+  document.getElementById('btn-measure').addEventListener('click', measure);
+  document.getElementById('btn-reset').addEventListener('click', resetState);
+
+  updateReadout(state);
+  requestAnimationFrame(frame);
+})();
+</script>
