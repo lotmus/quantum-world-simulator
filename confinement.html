@@ -1,0 +1,343 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Why Quarks Never Travel Alone</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+  button:disabled { opacity: 0.35; cursor: default; }
+  button:disabled:hover { border-color: var(--border); color: var(--ink); }
+
+  .stat-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 10px; }
+  .stat-row:last-child { margin-bottom: 0; }
+  .stat-row b { color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar-track { height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; margin-top: 4px; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--red)); width: 0%; transition: width 0.1s linear; }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;6</div>
+    <h1>Why Quarks Never Travel Alone</h1>
+  </header>
+  <p class="dek">
+    Pull two quarks apart and the strong field between them doesn't thin out the way gravity or electromagnetism
+    would &mdash; it stretches like a stubborn rubber band, storing more energy the farther they go. Keep pulling,
+    and nature doesn't hand you a free quark. It hands you a new quark-antiquark pair instead.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>separation&nbsp;<b id="rd-r">0.0</b>&nbsp;fm</span>
+      <span>energy&nbsp;stored&nbsp;<b id="rd-e">0.0</b>&nbsp;GeV</span>
+      <span>hadrons&nbsp;produced&nbsp;<b id="rd-hadrons">1</b></span>
+      <span>status&nbsp;<b id="rd-status">bound meson</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="560" role="img" aria-label="A quark and antiquark connected by a glowing flux tube; pulling them apart stretches the tube until it snaps and creates a new quark-antiquark pair, leaving two separate mesons instead of one free quark."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Pull Them Apart</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-pull">Pull</button>
+        <button id="btn-release">Release</button>
+        <button class="ghost" id="btn-reset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Flux-Tube Tension</h2>
+      <div class="stat-row"><span>Energy stored, relative to snap threshold</span></div>
+      <div class="bar-track"><div class="bar-fill" id="tension-bar"></div></div>
+      <div class="stat-row" style="margin-top:12px;"><span>String tension &sigma; (fixed, ~1&nbsp;GeV/fm)</span><b>constant</b></div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> gravity and electromagnetism both weaken with distance, following an
+    inverse-square law &mdash; but the strong force does the opposite. In this simplified flux-tube picture, the
+    energy stored between a quark and antiquark grows roughly in proportion to how far apart you pull them, like
+    a rubber band that never gets easier to stretch. Keep pulling, and eventually it becomes energetically
+    favorable to create a new quark-antiquark pair out of the vacuum rather than continue stretching the tube.
+    The tube snaps into two shorter tubes, each one now a complete, color-neutral meson of its own. You do not
+    get one naked quark. You get more hadrons &mdash; nature responds to your attempt to liberate a quark by
+    giving you additional particles instead.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var midY = H / 2;
+  var clockT = 0;
+
+  var SNAP_R = 3.2;     // separation (fm, illustrative units) at which the tube snaps
+  var SIGMA = 1.0;      // string tension, GeV/fm (illustrative)
+  var r = 0.35;         // current separation, fm
+  var pulling = false;
+  var snapped = false;
+  var hadronCount = 1;
+  var snapFlashT = null;
+
+  // Two independent meson pairs once snapped: left pair (original quark + new antiquark),
+  // right pair (new quark + original antiquark), drifting apart freely afterward.
+  var pairs = null; // null while unsnapped; else [{sep, driftV}, {sep, driftV}]
+
+  function energyStored() {
+    return SIGMA * r; // linear confining potential, V(r) = sigma * r
+  }
+
+  function recompute() {
+    document.getElementById('rd-r').textContent = r.toFixed(2);
+    document.getElementById('rd-e').textContent = energyStored().toFixed(2);
+    document.getElementById('rd-hadrons').textContent = hadronCount.toString();
+    document.getElementById('rd-status').textContent = snapped ? 'pair created — two mesons' : (r > 0.4 ? 'flux tube stretching' : 'bound meson');
+    var pct = Math.min(100, (r / SNAP_R) * 100);
+    document.getElementById('tension-bar').style.width = pct + '%';
+    document.getElementById('btn-pull').disabled = snapped;
+    document.getElementById('btn-release').disabled = snapped || r <= 0.36;
+  }
+
+  function pullStep() {
+    if (snapped) return;
+    r += 0.09;
+    if (r >= SNAP_R) {
+      r = SNAP_R;
+      doSnap();
+    }
+    recompute();
+  }
+
+  var pullHoldIv = null;
+  function startPull() {
+    pullStep();
+    pullHoldIv = setInterval(pullStep, 90);
+  }
+  function stopPull() {
+    clearInterval(pullHoldIv);
+    pullHoldIv = null;
+  }
+
+  function releaseElastic() {
+    if (snapped) return;
+    // the rubber band relaxes back toward its bound length — confinement pulling it home
+    var iv = setInterval(function () {
+      r -= 0.12;
+      if (r <= 0.35) { r = 0.35; clearInterval(iv); }
+      recompute();
+    }, 30);
+  }
+
+  function doSnap() {
+    snapped = true;
+    hadronCount = 2;
+    snapFlashT = 0;
+    pairs = [
+      { sep: 0.35, driftV: -0.028 },
+      { sep: 0.35, driftV: 0.028 }
+    ];
+    stopPull();
+    recompute();
+  }
+
+  function resetAll() {
+    snapped = false;
+    hadronCount = 1;
+    r = 0.35;
+    pairs = null;
+    snapFlashT = null;
+    stopPull();
+    recompute();
+  }
+
+  // --- drawing ---
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 45; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // fm -> px scale for the un-snapped view
+  var fmToPx = 90;
+
+  function drawQuark(x, y, colorLabel, isAnti) {
+    var fill = colorLabel === 'red' ? 'rgba(255,110,90,0.95)' : colorLabel === 'blue' ? 'rgba(94,160,255,0.95)' : 'rgba(120,220,140,0.95)';
+    ctx.save();
+    ctx.shadowColor = fill;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = '#0a0d16';
+    ctx.font = '600 12px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isAnti ? 'q̄' : 'q', x, y + 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(207,214,230,0.55)';
+    ctx.font = '10px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((isAnti ? 'anti-' : '') + colorLabel, x, y + 32);
+    ctx.restore();
+  }
+
+  function drawFluxTube(x0, y0, x1, y1, tensionFrac) {
+    // brighter and thinner-looking (more taut) as tension increases
+    var segs = 26;
+    ctx.save();
+    var glow = 6 + tensionFrac * 14;
+    var alpha = 0.5 + tensionFrac * 0.45;
+    ctx.strokeStyle = 'rgba(232,193,92,' + alpha + ')';
+    ctx.shadowColor = 'rgba(232,193,92,0.8)';
+    ctx.shadowBlur = glow;
+    ctx.lineWidth = 6 - tensionFrac * 2.5;
+    ctx.beginPath();
+    // slight jitter/thrum along the tube, amplitude shrinks as tension rises (tauter = less slack)
+    var wobble = (1 - tensionFrac) * 5;
+    for (var i = 0; i <= segs; i++) {
+      var t = i / segs;
+      var x = x0 + (x1 - x0) * t;
+      var y = y0 + (y1 - y0) * t + Math.sin(t * Math.PI * 3 + clockT * 4) * wobble * Math.sin(t * Math.PI);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSnapFlash() {
+    if (snapFlashT === null) return;
+    snapFlashT += 1 / 60;
+    var life = snapFlashT / 0.5;
+    if (life >= 1) { snapFlashT = null; return; }
+    var cx = W / 2, cy = midY;
+    var rad = 8 + life * 60;
+    var alpha = (1 - life) * 0.9;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,179,71,' + alpha + ')';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawUnsnapped() {
+    var cx = W / 2;
+    var halfGap = (r * fmToPx) / 2;
+    var qx = cx - halfGap, ax = cx + halfGap;
+    var tensionFrac = Math.min(1, r / SNAP_R);
+    drawFluxTube(qx, midY, ax, midY, tensionFrac);
+    drawQuark(qx, midY, 'red', false);
+    drawQuark(ax, midY, 'red', true);
+  }
+
+  function drawSnapped() {
+    // two independent, freely separating mesons, each a short taut tube
+    var p0 = pairs[0], p1 = pairs[1];
+    p0.sep += 0; // static short tube, just drifting as a unit
+    var leftCx = W / 2 - 170 + p0.driftV * (clockT * 60);
+    var rightCx = W / 2 + 170 + p1.driftV * (clockT * 60);
+    var half = (0.35 * fmToPx) / 2;
+
+    drawFluxTube(leftCx - half, midY, leftCx + half, midY, 0.1);
+    drawQuark(leftCx - half, midY, 'blue', false);
+    drawQuark(leftCx + half, midY, 'blue', true);
+
+    drawFluxTube(rightCx - half, midY, rightCx + half, midY, 0.1);
+    drawQuark(rightCx - half, midY, 'green', false);
+    drawQuark(rightCx + half, midY, 'green', true);
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(207,214,230,0.55)';
+    ctx.font = '11px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('new pair created here — two color-neutral mesons drift apart', W / 2, midY + 90);
+    ctx.restore();
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    if (snapped) drawSnapped(); else drawUnsnapped();
+    drawSnapFlash();
+    requestAnimationFrame(frame);
+  }
+
+  document.getElementById('btn-pull').addEventListener('mousedown', startPull);
+  document.getElementById('btn-pull').addEventListener('mouseup', stopPull);
+  document.getElementById('btn-pull').addEventListener('mouseleave', stopPull);
+  document.getElementById('btn-pull').addEventListener('touchstart', function (e) { e.preventDefault(); startPull(); });
+  document.getElementById('btn-pull').addEventListener('touchend', stopPull);
+  document.getElementById('btn-release').addEventListener('click', releaseElastic);
+  document.getElementById('btn-reset').addEventListener('click', resetAll);
+
+  recompute();
+  requestAnimationFrame(frame);
+
+  window.__debugEnergy = energyStored;
+  window.__debugSetR = function (v) { r = v; recompute(); };
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,361 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Feynman's Glass Trick</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface-2: #eae7dd; --border: #d8d3c4; --ink: #17140f; --ink-dim: #5a5646;
+    --gold: #9c7a1f; --gold-bright: #c9a227; --cyan: #0f8b9e; --red: #b8590f;
+    --shadow: 0 1px 2px rgba(23,20,15,0.06);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+      --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0d16; --surface-2: #161c2b; --border: #2a3244; --ink: #ece7d8; --ink-dim: #9aa1b5;
+    --gold: #c9a227; --gold-bright: #e8c15c; --cyan: #5ec8d8; --red: #ff7a4d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 72px; }
+  header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+  .dek { font-size: 1rem; color: var(--ink-dim); max-width: 62ch; line-height: 1.55; margin: 10px 0 36px; }
+
+  .stage { background: linear-gradient(180deg, #0b0f1a, #0d1220 55%, #0b0f1a); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+  canvas { display: block; width: 100%; height: auto; }
+  .readout { position: absolute; top: 14px; left: 16px; right: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; color: #cfd6e6; letter-spacing: 0.02em; display: flex; gap: 18px; flex-wrap: wrap; }
+  .readout span b { color: var(--gold-bright); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .card h2 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--ink-dim); margin: 0 0 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 0.86rem; font-weight: 500; padding: 9px 14px; border-radius: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--ink); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  button:hover { border-color: var(--gold); color: var(--gold-bright); }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #16130a; font-weight: 600; }
+  button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #16130a; }
+  button.ghost { opacity: 0.75; }
+
+  .slider-row { margin-bottom: 8px; }
+  .slider-row .lbl { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+  .slider-row .lbl b { color: var(--gold-bright); font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 600; }
+  input[type="range"] { width: 100%; accent-color: var(--cyan); }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--ink-dim); line-height: 1.6; }
+  footer strong { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Companion&nbsp;Simulation &middot; The Quantum World, Chapter&nbsp;7</div>
+    <h1>Feynman's Glass Trick</h1>
+  </header>
+  <p class="dek">
+    A single glass surface reflects about 4% of the light hitting it &mdash; simple enough. But a full pane of
+    glass has two surfaces, and as you change its thickness by a fraction of a wavelength, the reflection
+    swings smoothly between roughly 0% and 16%. Feynman explained it with a tiny spinning arrow for every
+    possible path &mdash; add them nose to tail, then square the result.
+  </p>
+
+  <div class="stage">
+    <div class="readout">
+      <span>thickness&nbsp;(arbitrary&nbsp;units)&nbsp;<b id="rd-thick">0.0</b></span>
+      <span>reflection&nbsp;probability&nbsp;<b id="rd-prob">8.0%</b></span>
+      <span>photons&nbsp;fired&nbsp;<b id="rd-fired">0</b></span>
+      <span>reflected&nbsp;<b id="rd-reflected">0</b></span>
+    </div>
+    <canvas id="scene" width="1200" height="620" role="img" aria-label="A photon approaching a glass pane, with two candidate paths (front-surface and back-surface reflection) shown as two spinning arrows that add together; the combined arrow's squared length gives the reflection probability, which oscillates as the glass thickness slider changes."></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h2>Vary the Glass</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>Thickness</span><b id="val-thick">0.0</b></div>
+        <input type="range" id="slider-thick" min="0" max="720" step="1" value="0">
+      </div>
+      <div class="btn-row">
+        <button class="ghost" id="btn-sweep">Auto-sweep thickness</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Fire Photons</h2>
+      <div class="btn-row">
+        <button class="primary" id="btn-one">Fire one</button>
+        <button id="btn-continuous">Continuous</button>
+        <button class="ghost" id="btn-reset">Reset count</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What you're seeing:</strong> two paths lead to the same event &mdash; reflecting off the front
+    surface, or entering the glass and reflecting off the back surface instead. Feynman's method gives each
+    path a tiny arrow whose length reflects roughly 4% single-surface reflection and whose direction spins as
+    the photon travels &mdash; a longer path means more spinning. Add the two arrows head to tail to get one
+    final arrow, then square its length: that's the reflection probability. Change the thickness by a fraction
+    of a wavelength and the second arrow's spin shifts, swinging the sum between full cancellation
+    (&asymp;0%, the arrows point opposite ways) and full reinforcement (&asymp;16%, they point the same way).
+    Firing individual photons shows the same randomness as the double-slit experiment back in Chapter 1: no
+    single photon's fate is predictable, but the fraction that reflect matches this calculated curve exactly.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var clockT = 0;
+
+  var AMP = 0.2; // each surface reflects with amplitude 0.2 -> probability 0.04 = 4%
+  var thicknessDeg = 0; // slider value, 0..720 (two full interference cycles)
+  var prob = 0;
+  var fired = 0, reflected = 0;
+
+  function deltaRad() { return thicknessDeg * Math.PI / 180; }
+
+  function recomputeProb() {
+    // amplitude sum of two equal-length arrows separated by phase delta:
+    // |a1 + a2|^2 = AMP^2 + AMP^2 + 2*AMP*AMP*cos(delta)
+    var d = deltaRad();
+    prob = AMP * AMP + AMP * AMP + 2 * AMP * AMP * Math.cos(d);
+    document.getElementById('rd-prob').textContent = (prob * 100).toFixed(1) + '%';
+    document.getElementById('rd-thick').textContent = thicknessDeg.toFixed(0);
+    document.getElementById('val-thick').textContent = thicknessDeg.toFixed(0);
+  }
+
+  function fireOne() {
+    fired++;
+    if (Math.random() < prob) { reflected++; spawnPhoton(true); } else { spawnPhoton(false); }
+    document.getElementById('rd-fired').textContent = fired.toString();
+    document.getElementById('rd-reflected').textContent = reflected.toString();
+  }
+  function resetCounts() {
+    fired = 0; reflected = 0;
+    document.getElementById('rd-fired').textContent = '0';
+    document.getElementById('rd-reflected').textContent = '0';
+  }
+
+  var continuousOn = false, continuousIv = null;
+  function toggleContinuous() {
+    continuousOn = !continuousOn;
+    var btn = document.getElementById('btn-continuous');
+    if (continuousOn) {
+      btn.textContent = 'Stop'; btn.classList.add('primary');
+      continuousIv = setInterval(fireOne, 260);
+    } else {
+      btn.textContent = 'Continuous'; btn.classList.remove('primary');
+      clearInterval(continuousIv); continuousIv = null;
+    }
+  }
+
+  var sweepOn = false, sweepIv = null;
+  function toggleSweep() {
+    sweepOn = !sweepOn;
+    var btn = document.getElementById('btn-sweep');
+    var slider = document.getElementById('slider-thick');
+    if (sweepOn) {
+      btn.textContent = 'Stop sweeping'; btn.classList.add('primary');
+      sweepIv = setInterval(function () {
+        thicknessDeg = (thicknessDeg + 3) % 721;
+        slider.value = thicknessDeg;
+        recomputeProb();
+      }, 30);
+    } else {
+      btn.textContent = 'Auto-sweep thickness'; btn.classList.remove('primary');
+      clearInterval(sweepIv); sweepIv = null;
+    }
+  }
+
+  // --- flying photon dots for the fire-one visualization ---
+  var photonDots = [];
+  function spawnPhoton(willReflect) {
+    photonDots.push({ x: 120, y: H / 2 - 140, t: 0, willReflect: willReflect });
+  }
+
+  // --- drawing ---
+  var stars = [];
+  (function initStars() {
+    for (var i = 0; i < 40; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.5 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2, speed: 0.4 + Math.random() * 0.8 });
+  })();
+  function drawStars() {
+    ctx.save();
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(clockT * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(207,214,230,' + tw + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  var glassX0 = 560, glassX1 = 640, topY = 70, botY = 300;
+  function drawGlass() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(94,200,216,0.10)';
+    ctx.strokeStyle = 'rgba(94,200,216,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(glassX0, topY, glassX1 - glassX0, botY - topY);
+    ctx.strokeRect(glassX0, topY, glassX1 - glassX0, botY - topY);
+    ctx.fillStyle = 'rgba(207,214,230,0.6)';
+    ctx.font = '11px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('front surface', glassX0, topY - 10);
+    ctx.fillText('back surface', glassX1, topY - 10);
+    ctx.restore();
+  }
+
+  function drawIncomingPhotonLine() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,193,92,0.55)';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(120, 150);
+    ctx.lineTo(glassX0, 150);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // --- the two arrow clocks + resultant, drawn in a dedicated panel ---
+  function arrowClock(cx, cy, radius, angle, color, label) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(154,161,181,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+
+    var ax = cx + Math.cos(angle) * radius, ay = cy - Math.sin(angle) * radius;
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4;
+    ctx.shadowColor = color; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ax, ay); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(ax, ay, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(207,214,230,0.6)';
+    ctx.font = '11px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, cx, cy + radius + 18);
+    ctx.restore();
+  }
+
+  function drawArrowPanel() {
+    var d = deltaRad();
+    var baseAngle = clockT * 1.2; // both arrows spin together at the base travel rate...
+    var angle1 = baseAngle;               // front-surface path
+    var angle2 = baseAngle + d;           // back-surface path, extra spin from extra travel
+
+    var r1 = 55;
+    var c1x = 210, c1y = 430;
+    var c2x = 400, c2y = 430;
+    arrowClock(c1x, c1y, r1, angle1, 'rgba(94,200,216,0.9)', 'front-surface arrow');
+    arrowClock(c2x, c2y, r1, angle2, 'rgba(255,122,77,0.9)', 'back-surface arrow');
+
+    // vector sum panel
+    var sx0 = 620, sy0 = 430;
+    var a1x = Math.cos(angle1) * AMP * 140, a1y = -Math.sin(angle1) * AMP * 140;
+    var a2x = Math.cos(angle2) * AMP * 140, a2y = -Math.sin(angle2) * AMP * 140;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(154,161,181,0.25)';
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.arc(sx0, sy0, 56, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // draw first arrow, then second arrow tacked onto its tip (head to tail)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(94,200,216,0.85)'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(sx0 + a1x, sy0 + a1y); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,122,77,0.85)';
+    ctx.beginPath(); ctx.moveTo(sx0 + a1x, sy0 + a1y); ctx.lineTo(sx0 + a1x + a2x, sy0 + a1y + a2y); ctx.stroke();
+
+    // resultant arrow
+    ctx.strokeStyle = 'rgba(232,193,92,0.95)'; ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(232,193,92,0.8)'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(sx0 + a1x + a2x, sy0 + a1y + a2y); ctx.stroke();
+    ctx.fillStyle = 'rgba(232,193,92,0.95)';
+    ctx.beginPath(); ctx.arc(sx0 + a1x + a2x, sy0 + a1y + a2y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(207,214,230,0.6)';
+    ctx.font = '11px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('sum, squared = probability', sx0, sy0 + 56 + 18);
+    ctx.restore();
+  }
+
+  function drawPhotons() {
+    for (var i = photonDots.length - 1; i >= 0; i--) {
+      var p = photonDots[i];
+      p.t += 1 / 60;
+      var x, y;
+      if (p.t < 0.5) {
+        var prog = p.t / 0.5;
+        x = 120 + (glassX0 - 120) * prog;
+        y = 150;
+      } else if (p.willReflect) {
+        var prog2 = (p.t - 0.5) / 0.5;
+        x = glassX0 - (glassX0 - 120) * prog2;
+        y = 150 - prog2 * 90;
+        if (prog2 >= 1) { photonDots.splice(i, 1); continue; }
+      } else {
+        var prog3 = (p.t - 0.5) / 0.5;
+        x = glassX0 + (W - 80 - glassX0) * prog3;
+        y = 150;
+        if (prog3 >= 1) { photonDots.splice(i, 1); continue; }
+      }
+      ctx.save();
+      var color = p.willReflect ? '255,179,71' : '94,200,216';
+      ctx.shadowColor = 'rgba(' + color + ',0.9)';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = 'rgba(' + color + ',0.95)';
+      ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function frame() {
+    clockT += 1 / 60;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawIncomingPhotonLine();
+    drawGlass();
+    drawPhotons();
+    drawArrowPanel();
+    requestAnimationFrame(frame);
+  }
+
+  document.getElementById('slider-thick').addEventListener('input', function () {
+    thicknessDeg = parseFloat(this.value);
+    recomputeProb();
+  });
+  document.getElementById('btn-sweep').addEventListener('click', toggleSweep);
+  document.getElementById('btn-one').addEventListener('click', fireOne);
+  document.getElementById('btn-continuous').addEventListener('click', toggleContinuous);
+  document.getElementById('btn-reset').addEventListener('click', resetCounts);
+
+  recomputeProb();
+  requestAnimationFrame(frame);
+
+  window.__debugProb = function () { return prob; };
+  window.__debugSetThickness = function (deg) { thicknessDeg = deg; recomputeProb(); };
+})();
+</script>
+
+</body></html>
